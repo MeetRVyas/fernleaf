@@ -4,6 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import type { INestApplication } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import { createHash } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { hash } from '@node-rs/argon2';
 import { allRoutes, can, me, ROLES, type Role } from '@fernleaf/shared';
 import { AppModule } from '../../app.module.js';
@@ -79,5 +80,54 @@ describe('auth and contract conformance', () => {
     const meResponse = await fetch(`${base}/auth/me`, { headers: { Cookie: cookie!.split(';')[0] } });
     expect(meResponse.status).toBe(200);
     me.response.parse(await meResponse.json());
+  });
+  it('logs out the current session', async () => {
+    const token = sessions.get('KITCHEN')!;
+    const logoutResponse = await fetch(`${base}/auth/logout`, { method: 'POST', headers: { Cookie: `session=${token}` } });
+    expect(logoutResponse.status).toBe(201);
+    const meResponse = await fetch(`${base}/auth/me`, { headers: { Cookie: `session=${token}` } });
+    expect(meResponse.status).toBe(401);
+  });
+  it('supports the complete staff administration flow', async () => {
+    const admin = { Cookie: `session=${sessions.get('ADMIN')!}`, 'Content-Type': 'application/json' };
+    const email = `new-${randomUUID()}@test.com`;
+    const created = await fetch(`${base}/staff`, { method: 'POST', headers: admin, body: JSON.stringify({ name: 'New Staff', email, role: 'KITCHEN', password: 'Initial@1234' }) });
+    expect(created.status).toBe(201);
+    const staff = await created.json() as { id: string; role: string; passwordHash?: string };
+    expect(staff.passwordHash).toBeUndefined();
+    const list = await fetch(`${base}/staff?page=1&pageSize=2`, { headers: admin });
+    expect(list.status).toBe(200);
+    expect((await list.json() as { pageSize: number }).pageSize).toBe(2);
+    const changed = await fetch(`${base}/staff/${staff.id}/role`, { method: 'PATCH', headers: admin, body: JSON.stringify({ role: 'DRIVER' }) });
+    expect(changed.status).toBe(200);
+    expect((await changed.json() as { role: string }).role).toBe('DRIVER');
+    const reset = await fetch(`${base}/staff/${staff.id}/reset-password`, { method: 'POST', headers: admin, body: JSON.stringify({ password: 'Replaced@1234' }) });
+    expect(reset.status).toBe(201);
+    const login = await fetch(`${base}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: 'Replaced@1234' }) });
+    expect(login.status).toBe(201);
+    const cookie = login.headers.get('set-cookie')!.split(';')[0];
+    const deactivated = await fetch(`${base}/staff/${staff.id}/deactivate`, { method: 'POST', headers: admin });
+    expect(deactivated.status).toBe(201);
+    expect((await deactivated.json() as { isActive: boolean }).isActive).toBe(false);
+    expect((await fetch(`${base}/auth/me`, { headers: { Cookie: cookie } })).status).toBe(401);
+  });
+  it('maps duplicate emails and missing staff to contract errors', async () => {
+    const admin = { Cookie: `session=${sessions.get('ADMIN')!}`, 'Content-Type': 'application/json' };
+    const duplicate = await fetch(`${base}/staff`, { method: 'POST', headers: admin, body: JSON.stringify({ name: 'Duplicate', email: 'admin@test.com', role: 'ADMIN', password: 'Test@1234' }) });
+    expect(duplicate.status).toBe(409);
+    expect((await duplicate.json() as { code: string }).code).toBe('CONFLICT');
+    const missing = await fetch(`${base}/staff/${randomUUID()}/role`, { method: 'PATCH', headers: admin, body: JSON.stringify({ role: 'DRIVER' }) });
+    expect(missing.status).toBe(404);
+    expect((await missing.json() as { code: string }).code).toBe('NOT_FOUND');
+  });
+  it('throttles repeated failed logins', async () => {
+    const email = `unknown-${randomUUID()}@test.com`;
+    for (let count = 0; count < 5; count++) {
+      const response = await fetch(`${base}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: 'wrong' }) });
+      expect(response.status).toBe(401);
+    }
+    const throttled = await fetch(`${base}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: 'wrong' }) });
+    expect(throttled.status).toBe(429);
+    expect((await throttled.json() as { code: string }).code).toBe('THROTTLED');
   });
 });
