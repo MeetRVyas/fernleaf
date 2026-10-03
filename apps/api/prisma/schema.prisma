@@ -15,9 +15,621 @@ model StaffUser {
   role         String
   isActive     Boolean   @default(true) @map("is_active")
   sessions     Session[]
+  defaultDriverCompanies Company[] @relation("DefaultDriver")
+  createdOrders Order[] @relation("OrderCreator")
+  orderEvents OrderEvent[]
+  startedUnits PrepUnit[] @relation("PrepStartedBy")
+  doneUnits PrepUnit[] @relation("PrepDoneBy")
+  drops Drop[] @relation("DropDriver")
+  deliveredDrops Drop[] @relation("DropDeliveredBy")
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
   @@map("staff_users")
+}
+
+enum OrderStatus {
+  DRAFT
+  PLACED
+  CONFIRMED
+  DELIVERED
+  CANCELLED
+  REJECTED
+}
+enum InvoiceStatus {
+  OPEN
+  PAID
+  VOID
+}
+enum Temperature {
+  HOT
+  COLD
+}
+enum PackagingType {
+  STANDARD
+  ECO
+  INSULATED
+}
+enum PriceSubjectType {
+  DISH
+  OPTION
+}
+enum DerivationKind {
+  NONE
+  COST_MULTIPLIER
+  PERCENT_OVER_TIER
+}
+enum OrderEventType {
+  CREATED
+  PLACED
+  EDITED
+  CONFIRMED
+  KITCHEN_STARTED
+  KITCHEN_READY
+  DISPATCH_READY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+  REJECTED
+  OVERRIDE
+}
+
+model Setting {
+  key String @id
+  value String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@map("settings")
+}
+
+model KitchenHoliday {
+  id String @id @default(uuid()) @db.Uuid
+  date DateTime @unique @db.Date
+  name String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@map("kitchen_holidays")
+}
+
+model Allergen {
+  id String @id @default(uuid()) @db.Uuid
+  name String @unique
+  dishes DishAllergen[]
+  options OptionAllergen[]
+  employees EmployeeAllergen[]
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@map("allergens")
+}
+
+model DietaryTag {
+  id String @id @default(uuid()) @db.Uuid
+  name String @unique
+  dishes DishDietaryTag[]
+  options OptionDietaryTag[]
+  employees EmployeeDietaryTag[]
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@map("dietary_tags")
+}
+
+model KitchenStation {
+  id String @id @default(uuid()) @db.Uuid
+  name String @unique
+  dishes Dish[]
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@map("kitchen_stations")
+}
+
+model Dish {
+  id String @id @default(uuid()) @db.Uuid
+  name String
+  description String @default("")
+  imageUrl String? @map("image_url")
+  sku String @unique
+  temperature Temperature
+  costCents Int @map("cost_cents")
+  minOrderQty Int @default(1) @map("min_order_qty")
+  stationId String? @map("station_id") @db.Uuid
+  station KitchenStation? @relation(fields: [stationId], references: [id], onDelete: Restrict)
+  isActive Boolean @default(true) @map("is_active")
+  allergens DishAllergen[]
+  dietaryTags DishDietaryTag[]
+  groups OptionGroup[]
+  menuItems MenuItem[]
+  orderLines OrderLine[]
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@index([stationId])
+  @@map("dishes")
+}
+
+model Option {
+  id String @id @default(uuid()) @db.Uuid
+  name String
+  costCents Int @map("cost_cents")
+  isActive Boolean @default(true) @map("is_active")
+  allergens OptionAllergen[]
+  dietaryTags OptionDietaryTag[]
+  groups OptionGroupOption[]
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@map("options")
+}
+
+model OptionGroup {
+  id String @id @default(uuid()) @db.Uuid
+  dishId String @map("dish_id") @db.Uuid
+  dish Dish @relation(fields: [dishId], references: [id], onDelete: Restrict)
+  name String
+  isRequired Boolean @default(false) @map("is_required")
+  sortOrder Int @default(0) @map("sort_order")
+  options OptionGroupOption[]
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@index([dishId, sortOrder])
+  @@map("option_groups")
+}
+
+model OptionGroupOption {
+  id String @id @default(uuid()) @db.Uuid
+  groupId String @map("group_id") @db.Uuid
+  optionId String @map("option_id") @db.Uuid
+  group OptionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  option Option @relation(fields: [optionId], references: [id], onDelete: Restrict)
+  sortOrder Int @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@unique([groupId, optionId])
+  @@index([optionId])
+  @@map("option_group_options")
+}
+
+model DishAllergen {
+  dishId String @map("dish_id") @db.Uuid
+  allergenId String @map("allergen_id") @db.Uuid
+  dish Dish @relation(fields: [dishId], references: [id], onDelete: Restrict)
+  allergen Allergen @relation(fields: [allergenId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@id([dishId, allergenId])
+  @@index([allergenId])
+  @@map("dish_allergens")
+}
+
+model DishDietaryTag {
+  dishId String @map("dish_id") @db.Uuid
+  tagId String @map("tag_id") @db.Uuid
+  dish Dish @relation(fields: [dishId], references: [id], onDelete: Restrict)
+  tag DietaryTag @relation(fields: [tagId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@id([dishId, tagId])
+  @@index([tagId])
+  @@map("dish_dietary_tags")
+}
+
+model OptionAllergen {
+  optionId String @map("option_id") @db.Uuid
+  allergenId String @map("allergen_id") @db.Uuid
+  option Option @relation(fields: [optionId], references: [id], onDelete: Restrict)
+  allergen Allergen @relation(fields: [allergenId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@id([optionId, allergenId])
+  @@index([allergenId])
+  @@map("option_allergens")
+}
+
+model OptionDietaryTag {
+  optionId String @map("option_id") @db.Uuid
+  tagId String @map("tag_id") @db.Uuid
+  option Option @relation(fields: [optionId], references: [id], onDelete: Restrict)
+  tag DietaryTag @relation(fields: [tagId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@id([optionId, tagId])
+  @@index([tagId])
+  @@map("option_dietary_tags")
+}
+
+model PriceTier {
+  id String @id @default(uuid()) @db.Uuid
+  name String @unique
+  isDefault Boolean @default(false) @map("is_default")
+  isActive Boolean @default(true) @map("is_active")
+  derivationKind DerivationKind @default(NONE) @map("derivation_kind")
+  factorMilli Int? @map("factor_milli")
+  percentBp Int? @map("percent_bp")
+  baseTierId String? @map("base_tier_id") @db.Uuid
+  baseTier PriceTier? @relation("TierBase", fields: [baseTierId], references: [id], onDelete: Restrict)
+  derivedTiers PriceTier[] @relation("TierBase")
+  entries PriceEntry[]
+  companies Company[]
+  orders Order[]
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@index([baseTierId])
+  @@map("price_tiers")
+}
+
+model PriceEntry {
+  id String @id @default(uuid()) @db.Uuid
+  tierId String @map("tier_id") @db.Uuid
+  tier PriceTier @relation(fields: [tierId], references: [id], onDelete: Restrict)
+  subjectType PriceSubjectType @map("subject_type")
+  subjectId String @map("subject_id") @db.Uuid
+  priceCents Int @map("price_cents")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@unique([tierId, subjectType, subjectId])
+  @@map("price_entries")
+}
+
+model Company {
+  id String @id @default(uuid()) @db.Uuid
+  name String @unique
+  tierId String? @map("tier_id") @db.Uuid
+  tier PriceTier? @relation(fields: [tierId], references: [id], onDelete: Restrict)
+  defaultDeliveryTime String @default("12:00") @map("default_delivery_time")
+  deliveryLeadMinutes Int @default(60) @map("delivery_lead_minutes")
+  defaultPackaging PackagingType @default(STANDARD) @map("default_packaging")
+  driverInstructions String @default("") @map("driver_instructions")
+  defaultDriverId String? @map("default_driver_id") @db.Uuid
+  defaultDriver StaffUser? @relation("DefaultDriver", fields: [defaultDriverId], references: [id], onDelete: Restrict)
+  billingName String @map("billing_name")
+  billingEmail String @map("billing_email")
+  billingPhone String? @map("billing_phone")
+  billingAddress String @map("billing_address")
+  ownerEmployeeId String? @map("owner_employee_id") @db.Uuid
+  ownerEmployee Employee? @relation("CompanyOwner", fields: [ownerEmployeeId], references: [id], onDelete: Restrict)
+  workingDays Int[] @default([1, 2, 3, 4, 5]) @map("working_days")
+  isActive Boolean @default(true) @map("is_active")
+  domains CompanyDomain[]
+  addresses CompanyAddress[]
+  holidays CompanyHoliday[]
+  employees Employee[] @relation("CompanyEmployees")
+  hiddenCategories CompanyHiddenCategory[]
+  hiddenItems CompanyHiddenItem[]
+  orders Order[]
+  drops Drop[]
+  invoices Invoice[]
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@index([tierId])
+  @@index([defaultDriverId])
+  @@map("companies")
+}
+
+model CompanyDomain {
+  id String @id @default(uuid()) @db.Uuid
+  companyId String @map("company_id") @db.Uuid
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  domain String @unique
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@index([companyId])
+  @@map("company_domains")
+}
+
+model CompanyAddress {
+  id String @id @default(uuid()) @db.Uuid
+  companyId String @map("company_id") @db.Uuid
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  label String
+  line1 String
+  line2 String?
+  city String
+  region String
+  postalCode String @map("postal_code")
+  country String
+  isDefault Boolean @default(false) @map("is_default")
+  orders Order[]
+  drops Drop[]
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@index([companyId])
+  @@map("company_addresses")
+}
+
+model CompanyHoliday {
+  id String @id @default(uuid()) @db.Uuid
+  companyId String @map("company_id") @db.Uuid
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  date DateTime @db.Date
+  name String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@unique([companyId, date])
+  @@map("company_holidays")
+}
+
+model Employee {
+  id String @id @default(uuid()) @db.Uuid
+  companyId String @map("company_id") @db.Uuid
+  company Company @relation("CompanyEmployees", fields: [companyId], references: [id], onDelete: Restrict)
+  ownedCompanies Company[] @relation("CompanyOwner")
+  name String
+  email String @unique
+  phone String?
+  canChooseAddress Boolean @default(false) @map("can_choose_address")
+  canChangeDeliveryTime Boolean @default(false) @map("can_change_delivery_time")
+  canChangePackaging Boolean @default(false) @map("can_change_packaging")
+  isActive Boolean @default(true) @map("is_active")
+  allergens EmployeeAllergen[]
+  dietaryTags EmployeeDietaryTag[]
+  orders Order[]
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@index([companyId])
+  @@map("employees")
+}
+
+model EmployeeAllergen {
+  employeeId String @map("employee_id") @db.Uuid
+  allergenId String @map("allergen_id") @db.Uuid
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  allergen Allergen @relation(fields: [allergenId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@id([employeeId, allergenId])
+  @@index([allergenId])
+  @@map("employee_allergens")
+}
+
+model EmployeeDietaryTag {
+  employeeId String @map("employee_id") @db.Uuid
+  tagId String @map("tag_id") @db.Uuid
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  tag DietaryTag @relation(fields: [tagId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@id([employeeId, tagId])
+  @@index([tagId])
+  @@map("employee_dietary_tags")
+}
+
+model MenuCategory {
+  id String @id @default(uuid()) @db.Uuid
+  name String
+  sortOrder Int @default(0) @map("sort_order")
+  isActive Boolean @default(true) @map("is_active")
+  isSecret Boolean @default(false) @map("is_secret")
+  items MenuItem[]
+  hiddenFor CompanyHiddenCategory[]
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@index([sortOrder])
+  @@map("menu_categories")
+}
+
+model MenuItem {
+  id String @id @default(uuid()) @db.Uuid
+  categoryId String @map("category_id") @db.Uuid
+  category MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  dishId String @map("dish_id") @db.Uuid
+  dish Dish @relation(fields: [dishId], references: [id], onDelete: Restrict)
+  sortOrder Int @default(0) @map("sort_order")
+  isActive Boolean @default(true) @map("is_active")
+  hiddenFor CompanyHiddenItem[]
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@unique([categoryId, dishId])
+  @@index([categoryId, sortOrder])
+  @@index([dishId])
+  @@map("menu_items")
+}
+
+model CompanyHiddenCategory {
+  companyId String @map("company_id") @db.Uuid
+  categoryId String @map("category_id") @db.Uuid
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  category MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@id([companyId, categoryId])
+  @@index([categoryId])
+  @@map("company_hidden_categories")
+}
+
+model CompanyHiddenItem {
+  companyId String @map("company_id") @db.Uuid
+  itemId String @map("item_id") @db.Uuid
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  item MenuItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@id([companyId, itemId])
+  @@index([itemId])
+  @@map("company_hidden_items")
+}
+
+model Order {
+  id String @id @default(uuid()) @db.Uuid
+  orderNumber Int @unique @default(autoincrement()) @map("order_number")
+  employeeId String @map("employee_id") @db.Uuid
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  companyId String @map("company_id") @db.Uuid
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  status OrderStatus @default(DRAFT)
+  deliveryDate DateTime @map("delivery_date") @db.Date
+  deliveryTime String @map("delivery_time")
+  addressId String? @map("address_id") @db.Uuid
+  address CompanyAddress? @relation(fields: [addressId], references: [id], onDelete: Restrict)
+  addressSnapshot Json? @map("address_snapshot")
+  packaging PackagingType @default(STANDARD)
+  totalCents Int @default(0) @map("total_cents")
+  version Int @default(1)
+  priceTierId String? @map("price_tier_id") @db.Uuid
+  priceTier PriceTier? @relation(fields: [priceTierId], references: [id], onDelete: Restrict)
+  invoiceId String? @map("invoice_id") @db.Uuid
+  invoice Invoice? @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  createdByStaffId String @map("created_by_staff_id") @db.Uuid
+  createdByStaff StaffUser @relation("OrderCreator", fields: [createdByStaffId], references: [id], onDelete: Restrict)
+  placedAt DateTime? @map("placed_at") @db.Timestamptz(6)
+  confirmedAt DateTime? @map("confirmed_at") @db.Timestamptz(6)
+  cancelledAt DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  rejectedAt DateTime? @map("rejected_at") @db.Timestamptz(6)
+  reason String?
+  lines OrderLine[]
+  events OrderEvent[]
+  kitchenState OrderKitchenState?
+  dispatchState OrderDispatchState?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@index([deliveryDate, status])
+  @@index([companyId, deliveryDate])
+  @@index([invoiceId])
+  @@index([employeeId])
+  @@index([addressId])
+  @@index([priceTierId])
+  @@index([createdByStaffId])
+  @@map("orders")
+}
+
+model OrderLine {
+  id String @id @default(uuid()) @db.Uuid
+  orderId String @map("order_id") @db.Uuid
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  dishId String @map("dish_id") @db.Uuid
+  dish Dish @relation(fields: [dishId], references: [id], onDelete: Restrict)
+  dishSnapshot Json @map("dish_snapshot")
+  quantity Int
+  lineTotalCents Int @map("line_total_cents")
+  combos OrderLineCombo[]
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@index([orderId])
+  @@index([dishId])
+  @@map("order_lines")
+}
+
+model OrderLineCombo {
+  id String @id @default(uuid()) @db.Uuid
+  orderLineId String @map("order_line_id") @db.Uuid
+  orderLine OrderLine @relation(fields: [orderLineId], references: [id], onDelete: Restrict)
+  quantity Int
+  dishPriceCents Int @map("dish_price_cents")
+  unitPriceCents Int @map("unit_price_cents")
+  optionsSnapshot Json @map("options_snapshot")
+  comboKey String @map("combo_key")
+  prepUnit PrepUnit?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@unique([orderLineId, comboKey])
+  @@index([orderLineId])
+  @@map("order_line_combos")
+}
+
+model OrderEvent {
+  id String @id @default(uuid()) @db.Uuid
+  orderId String @map("order_id") @db.Uuid
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  type OrderEventType
+  at DateTime @default(now()) @db.Timestamptz(6)
+  actorId String? @map("actor_id") @db.Uuid
+  actor StaffUser? @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  meta Json?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@index([orderId, at])
+  @@index([actorId])
+  @@map("order_events")
+}
+
+model CutoffRun {
+  id String @id @default(uuid()) @db.Uuid
+  deliveryDate DateTime @unique @map("delivery_date") @db.Date
+  processedAt DateTime @map("processed_at") @db.Timestamptz(6)
+  draftsCancelled Int @map("drafts_cancelled")
+  ordersConfirmed Int @map("orders_confirmed")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@map("cutoff_runs")
+}
+
+model PrepUnit {
+  id String @id @default(uuid()) @db.Uuid
+  comboId String @unique @map("combo_id") @db.Uuid
+  combo OrderLineCombo @relation(fields: [comboId], references: [id], onDelete: Restrict)
+  startedAt DateTime? @map("started_at") @db.Timestamptz(6)
+  startedById String? @map("started_by_id") @db.Uuid
+  startedBy StaffUser? @relation("PrepStartedBy", fields: [startedById], references: [id], onDelete: Restrict)
+  doneAt DateTime? @map("done_at") @db.Timestamptz(6)
+  doneById String? @map("done_by_id") @db.Uuid
+  doneBy StaffUser? @relation("PrepDoneBy", fields: [doneById], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@index([comboId])
+  @@index([startedById])
+  @@index([doneById])
+  @@map("prep_units")
+}
+
+model OrderKitchenState {
+  orderId String @id @map("order_id") @db.Uuid
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  startedAt DateTime? @map("started_at") @db.Timestamptz(6)
+  readyAt DateTime? @map("ready_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@map("order_kitchen_state")
+}
+
+model Drop {
+  id String @id @default(uuid()) @db.Uuid
+  deliveryDate DateTime @map("delivery_date") @db.Date
+  companyId String @map("company_id") @db.Uuid
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  addressId String @map("address_id") @db.Uuid
+  address CompanyAddress @relation(fields: [addressId], references: [id], onDelete: Restrict)
+  deliveryTime String @map("delivery_time")
+  driverId String? @map("driver_id") @db.Uuid
+  driver StaffUser? @relation("DropDriver", fields: [driverId], references: [id], onDelete: Restrict)
+  deliveredAt DateTime? @map("delivered_at") @db.Timestamptz(6)
+  deliveredById String? @map("delivered_by_id") @db.Uuid
+  deliveredBy StaffUser? @relation("DropDeliveredBy", fields: [deliveredById], references: [id], onDelete: Restrict)
+  note String?
+  onTime Boolean? @map("on_time")
+  orderStates OrderDispatchState[]
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@unique([deliveryDate, companyId, addressId, deliveryTime])
+  @@index([deliveryDate, driverId])
+  @@index([addressId])
+  @@index([driverId])
+  @@index([deliveredById])
+  @@map("drops")
+}
+
+model OrderDispatchState {
+  orderId String @id @map("order_id") @db.Uuid
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  dropId String @map("drop_id") @db.Uuid
+  drop Drop @relation(fields: [dropId], references: [id], onDelete: Restrict)
+  dispatchReadyAt DateTime? @map("dispatch_ready_at") @db.Timestamptz(6)
+  outForDeliveryAt DateTime? @map("out_for_delivery_at") @db.Timestamptz(6)
+  deliveredAt DateTime? @map("delivered_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@index([dropId])
+  @@map("order_dispatch_state")
+}
+
+model Invoice {
+  id String @id @default(uuid()) @db.Uuid
+  number String @unique
+  companyId String @map("company_id") @db.Uuid
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  status InvoiceStatus @default(OPEN)
+  totalCents Int @map("total_cents")
+  paidAt DateTime? @map("paid_at") @db.Timestamptz(6)
+  voidedAt DateTime? @map("voided_at") @db.Timestamptz(6)
+  orders Order[]
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@index([companyId, status])
+  @@map("invoices")
 }
 
 model Session {
