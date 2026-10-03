@@ -11,6 +11,8 @@ function quoted(name: string): string { return `"${name.replaceAll('"', '""')}"`
 export default async function setup(project: TestProject) {
   config({ path: fileURLToPath(new URL('../../../../.env', import.meta.url)) });
   if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required for database tests');
+  const testHost = new URL(process.env.DATABASE_URL).hostname;
+  if (!['127.0.0.1', 'localhost', '[::1]'].includes(testHost) && process.env.ALLOW_REMOTE_TEST_DB !== '1') throw new Error('Refusing a non-local DATABASE_URL without ALLOW_REMOTE_TEST_DB=1');
   const runId = randomUUID().replaceAll('-', '').slice(0, 16);
   const template = `fernleaf_test_template_${runId}`;
   const admin = new Client({ connectionString: adminUrl() });

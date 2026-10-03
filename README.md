@@ -4,7 +4,7 @@ This monorepo contains the NestJS API in `apps/api`, an empty `apps/web` slot fo
 
 ## Quick start
 
-Use Node 22 and corepack. Copy `.env.example` to `.env` and give this worktree its own database name. Run `corepack pnpm install`, start Docker Desktop, then `pnpm db:up`. Next run `pnpm --filter @fernleaf/api exec prisma generate`, `pnpm db:migrate`, `pnpm db:seed`, and `pnpm dev`. The API listens on `http://localhost:3001/api`; `/api/health` has no database dependency and `/api/health/ready` checks PostgreSQL.
+Use Node 22 and corepack. Copy `.env.example` to `.env` and give this worktree its own database name. Use one server per machine, one database per worktree. Run `corepack pnpm install`; start the shared PostgreSQL server once with `pnpm db:up`, then use `pnpm db:create` in each worktree. Next run `pnpm --filter @fernleaf/api exec prisma generate`, `pnpm db:migrate`, `pnpm db:seed`, and `pnpm dev`. The API listens on `http://localhost:3001/api`; `/api/health` has no database dependency and `/api/health/ready` checks PostgreSQL.
 
 The seeded staff accounts are `admin@test.com`, `kitchen@test.com`, `dispatch@test.com`, and `driver@test.com`, each with password `Test@1234`. Change these before using any nonlocal environment.
 
@@ -13,11 +13,18 @@ The seeded staff accounts are `admin@test.com`, `kitchen@test.com`, `dispatch@te
 | Name | Required | Example | Purpose | Secret |
 |---|---|---|---|---|
 | `DATABASE_URL` | Yes | `postgresql://fernleaf:fernleaf@127.0.0.1:55432/fernleaf_a?schema=public` | Direct PostgreSQL connection for runtime and migrations | Yes |
+| `DIRECT_URL` | No | same as `DATABASE_URL` | Direct migration connection when runtime uses a pooled URL | Yes |
+| `COMPOSE_DB_PORT` | No | `55432` | Shared Compose PostgreSQL host port | No |
+| `COMPOSE_DB_NAME` | No | `fernleaf_a` | Initial database created by Compose | No |
+| `ALLOW_REMOTE_TEST_DB` | No | `1` | Explicitly permit integration tests to create databases on a non-local server | No |
+| `VALIDATE_RESPONSES` | No | `true` | Validate API responses against contracts during tests | No |
 | `PORT` | No | `3001` | API listen port | No |
 | `COOKIE_SECURE` | No | `false` | Enable secure session cookies behind HTTPS | No |
 | `TRUST_PROXY` | No | `true` | Honor reverse proxy headers | No |
 | `KITCHEN_TIMEZONE` | No | `America/New_York` | Kitchen local date and time zone | No |
 | `SENTRY_DSN` | No | empty | Enable Sentry when configured | Yes |
+
+The shared package exports TypeScript source. The Docker API image runs through `tsx` so it can load those exports.
 
 ## Scope
 

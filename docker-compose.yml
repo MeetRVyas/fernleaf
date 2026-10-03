@@ -4,11 +4,11 @@ services:
     environment:
       POSTGRES_USER: fernleaf
       POSTGRES_PASSWORD: fernleaf
-      POSTGRES_DB: fernleaf_a
+      POSTGRES_DB: ${COMPOSE_DB_NAME:-fernleaf_a}
     ports:
-      - "55432:5432"
+      - "${COMPOSE_DB_PORT:-55432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U fernleaf -d fernleaf_a"]
+      test: ["CMD-SHELL", "pg_isready -U fernleaf -d ${COMPOSE_DB_NAME:-fernleaf_a}"]
       interval: 5s
       retries: 10
     volumes:

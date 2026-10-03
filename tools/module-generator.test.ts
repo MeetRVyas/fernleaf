@@ -17,6 +17,7 @@ describe('module scaffold', () => {
     const names = await readdir(join(root, 'apps', 'api', 'src', 'modules', 'sample-module'));
     expect(names).toEqual(expect.arrayContaining(['sample-module.controller.ts', 'sample-module.service.ts', 'sample-module.repository.ts', 'sample-module.module.ts', 'domain', 'ports.ts', 'events.ts', 'index.ts']));
     expect(await readFile(join(root, 'docs', 'modules', 'sample-module.md'), 'utf8')).toContain('## How it works');
+    expect(await readFile(join(root, 'apps', 'api', 'src', 'modules', 'sample-module', 'sample-module.service.ts'), 'utf8')).toContain('@Inject(SampleModuleRepository)');
     await expect(generateModule('sample-module', root)).rejects.toThrow('already exists');
     await expect(generateModule('../other', root)).rejects.toThrow('Usage');
   });

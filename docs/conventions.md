@@ -13,7 +13,9 @@ Every session follows these. Where a rule needs a decision, `decisions.md` has i
   - TypeScript 5.9.x (6.0.x is acceptable). Not 7.x: it ships no compiler JS API, so typescript-eslint (peer range below 6.1) and ts-jest break.
   - Prisma 7.x only. Not 8: it is a release candidate, and `prisma@latest` installs a CLI with no `generate` or `migrate dev`. Always `pnpm exec prisma`, never unpinned `npx prisma`.
   - NestJS 11, Next.js, Mantine, ESLint, Vitest: the latest stable majors at the time Session A or W pins them, as exact versions.
-  - Scripts (seed, tools) run through `tsx`. Do not rely on Node's built-in TypeScript stripping.
+- Scripts (seed, tools) run through `tsx`. Do not rely on Node's built-in TypeScript stripping.
+- Every constructor parameter in Nest classes needs `@Inject(Token)`, because tsx and Vitest do not emit decorator metadata.
+- Shared exports TypeScript source, and the Docker API image runs through `tsx`.
 
 ## 2. Naming and files
 

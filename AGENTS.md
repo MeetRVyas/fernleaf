@@ -15,6 +15,7 @@ business rule, the brief wins. On engineering choices, `decisions.md` and `conve
 - Contract first: `packages/shared/src/contracts` is the source of truth for routes.
 - Money is integer cents. Kitchen time goes through `Clock` and the shared helpers. No `any`.
 - Check permissions with `can()`; never check role names.
+- Every constructor parameter in Nest classes needs `@Inject(Token)`, because tsx and Vitest do not emit decorator metadata.
 - Small commits (Conventional Commits). Lint, typecheck and tests must pass before each commit.
 - If blocked, pick the simplest assumption, record it in `docs/decisions.md` section 9, and continue.
 - Never claim a check passed without running it.
