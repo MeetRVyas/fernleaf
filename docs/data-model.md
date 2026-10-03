@@ -108,6 +108,24 @@ erDiagram
 | `price_entries(tier_id,subject_type,subject_id)` unique | One manual override per tier and subject; direct price lookup. |
 | `company_addresses(company_id)`, `company_domains(company_id)` | Company detail. Partial address index enforces a single default. |
 | `order_events(order_id,at)`, `order_dispatch_state(drop_id)` | Timelines and drop board aggregation. |
-| Other relation-key indexes | Join and reverse lookup on the foreign key; unique constraints also provide lookup indexes. |
+| `kitchen_holidays(date)`, `cutoff_runs(delivery_date)` | Prevent duplicate calendar entries and repeated processing for a date. |
+| `allergens(name)`, `dietary_tags(name)`, `kitchen_stations(name)`, `dishes(sku)` | Unique admin reference names and internal dish identity. |
+| `price_tiers(name)`, `companies(name)`, `company_domains(domain)`, `employees(email)`, `invoices(number)` | Enforce unique business identities and support direct lookup. |
+| Partial `price_tiers(is_default)`, `company_addresses(company_id) WHERE is_default` | Allow at most one default tier globally and one default address per company. |
+| `option_group_options(group_id,option_id)`, `menu_items(category_id,dish_id)`, `company_hidden_categories(company_id,category_id)`, `company_hidden_items(company_id,item_id)` | Prevent duplicate membership or hiding rules; their leading key supports the containing record lookup. |
+| `dish_allergens`, `dish_dietary_tags`, `option_allergens`, `option_dietary_tags`, `employee_allergens`, `employee_dietary_tags` composite primary keys | Prevent duplicate labels or preferences and fetch all links for a dish, option or employee. |
+| Their `allergen_id` and `tag_id` indexes; `option_group_options(option_id)` | Reverse lookup when a reference is edited or deactivated. |
+| `price_tiers(base_tier_id)`, `companies(tier_id)`, `companies(default_driver_id)` | Find derived tiers, companies assigned to a tier, and companies using a driver. |
+| `company_holidays(company_id,date)` | One holiday per company/date and calendar lookup. |
+| `employee_allergens(allergen_id)`, `employee_dietary_tags(tag_id)` | Reverse lookup from reference data to affected employees. |
+| `menu_items(dish_id)`, `company_hidden_categories(category_id)`, `company_hidden_items(item_id)` | Reverse menu and visibility lookup. |
+| `orders(employee_id)`, `orders(address_id)`, `orders(price_tier_id)`, `orders(created_by_staff_id)` | Employee history and reverse foreign-key lookup for delivery, tier and creator. |
+| `order_lines(dish_id)`, `order_events(actor_id)` | Historical dish and staff actor lookup. |
+| `order_line_combos(order_line_id,combo_key)` unique | Merge identical combinations on the same line. |
+| `prep_units(started_by_id)`, `prep_units(done_by_id)` | Staff action lookup. |
+| `drops(delivery_date,company_id,address_id,delivery_time)` unique | One drop per exact company/address/time group. |
+| `drops(address_id)`, `drops(driver_id)`, `drops(delivered_by_id)` | Reverse address and staff lookup. The standalone driver index also supports driver assignment queries without a date filter. |
+| `invoices(company_id,status)` | Company invoice list filtered by status. |
+| `orders(order_number)`, `sessions(token_hash)` unique | Fast lookup from the human order number or session token hash. |
 
 The fixed fixture set in `apps/api/prisma/test-fixtures.ts` is callable from integration tests. It creates three companies, six employees, twelve dishes, three tiers (one cost-derived and one derived from another tier), a secret menu category and one company-hidden menu item. It does not create staff accounts.
