@@ -3,13 +3,14 @@ import { PrismaClient } from '../generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { env } from './config.js';
+import { logger } from './logger.js';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleDestroy {
   private readonly pool: Pool;
   constructor() {
     const pool = new Pool({ connectionString: env.DATABASE_URL, max: 5 });
-    pool.on('error', (error) => { process.stderr.write(`Postgres idle connection error: ${error.message}\n`); });
+    pool.on('error', (error) => { logger.error({ requestId: 'system', error: error.message }, 'Postgres idle connection error'); });
     super({ adapter: new PrismaPg(pool) });
     this.pool = pool;
   }

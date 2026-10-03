@@ -1,6 +1,6 @@
 # API development
 
-From the repo root, run `pnpm dev` for watch mode, `pnpm db:migrate` for Prisma Migrate, `pnpm db:seed` for idempotent staff seed data, and `pnpm lint && pnpm typecheck && pnpm test && pnpm test:db` before a database milestone commit. Use `pnpm --filter @fernleaf/api exec prisma generate` after schema changes. Use `pnpm --filter @fernleaf/api exec prisma migrate deploy` to apply committed migrations. The process handles SIGTERM through Nest shutdown hooks.
+From the repo root, run `pnpm dev` for watch mode, `pnpm db:migrate` for Prisma Migrate, `pnpm db:seed` for idempotent staff seed data, and `pnpm lint && pnpm typecheck && pnpm test && pnpm test:db` before a database milestone commit. Run `pnpm db:drift` to compare migration SQL with the schema. Use `pnpm --filter @fernleaf/api exec prisma generate` after schema changes. Use `pnpm --filter @fernleaf/api exec prisma migrate deploy` to apply committed migrations. The process handles SIGTERM through Nest shutdown hooks.
 
 ## Add a module
 

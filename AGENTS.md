@@ -37,6 +37,7 @@ business rule, the brief wins. On engineering choices, `decisions.md` and `conve
 - `pnpm db:up` / `pnpm db:down`: start or stop the local PostgreSQL Compose service.
 - `pnpm db:migrate`: create/apply local Prisma migrations using `DATABASE_URL`.
 - `pnpm db:seed`: idempotently seed four staff accounts.
+- `pnpm db:drift`: compare migration SQL with `schema.prisma` using a temporary shadow database.
 - `pnpm dev`: run the API in watch mode.
 - `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:db`: required checks.
 - `pnpm gen:module <name>`: create the API layer files and module spec stub.

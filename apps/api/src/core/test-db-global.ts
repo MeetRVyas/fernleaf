@@ -16,15 +16,7 @@ export default async function setup(project: TestProject) {
   const admin = new Client({ connectionString: adminUrl() });
   await admin.connect();
   await admin.query(`CREATE DATABASE ${quoted(template)}`);
-  const oldUrl = process.env.DATABASE_URL;
-  try {
-    process.env.DATABASE_URL = databaseUrl(template);
-    const pnpm = process.env.npm_execpath;
-    if (!pnpm) throw new Error('Run database tests through pnpm');
-    execFileSync(process.execPath, [pnpm, '--filter', '@fernleaf/api', 'exec', 'prisma', 'migrate', 'deploy'], { stdio: 'inherit', env: process.env });
-  } finally { process.env.DATABASE_URL = oldUrl; }
-  project.provide('dbRunId', runId);
-  return async () => {
+  const cleanup = async () => {
     const names = (await admin.query<{ datname: string }>('SELECT datname FROM pg_database WHERE datname LIKE $1', [`fernleaf_test_${runId}_%`])).rows.map(row => row.datname);
     for (const name of [...names, template]) {
       await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1', [name]);
@@ -32,5 +24,17 @@ export default async function setup(project: TestProject) {
     }
     await admin.end();
   };
+  const oldUrl = process.env.DATABASE_URL;
+  try {
+    process.env.DATABASE_URL = databaseUrl(template);
+    const pnpm = process.env.npm_execpath;
+    if (!pnpm) throw new Error('Run database tests through pnpm');
+    execFileSync(process.execPath, [pnpm, '--filter', '@fernleaf/api', 'exec', 'prisma', 'migrate', 'deploy'], { stdio: 'inherit', env: process.env });
+  } catch (error) {
+    await cleanup();
+    throw error;
+  } finally { process.env.DATABASE_URL = oldUrl; }
+  project.provide('dbRunId', runId);
+  return cleanup;
 }
 declare module 'vitest' { export interface ProvidedContext { dbRunId: string } }

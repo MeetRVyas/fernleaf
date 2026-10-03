@@ -16,6 +16,7 @@ export class ErrorFilter implements ExceptionFilter {
     if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') { response.status(409).json({ code: 'CONFLICT', message: 'A unique value already exists', requestId }); return; }
     if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') { response.status(404).json({ code: 'NOT_FOUND', message: 'Record not found', requestId }); return; }
     const status = error instanceof HttpException ? error.getStatus() : 500;
-    response.status(status).json({ code: status === 401 ? 'UNAUTHENTICATED' : status === 403 ? 'FORBIDDEN' : 'INTERNAL_ERROR', message: status === 500 ? 'Internal server error' : error instanceof Error ? error.message : 'Request failed', requestId });
+    const code = ({ 400: 'VALIDATION_ERROR', 401: 'UNAUTHENTICATED', 403: 'FORBIDDEN', 404: 'NOT_FOUND', 409: 'CONFLICT', 422: 'VALIDATION_ERROR', 429: 'THROTTLED' } as Record<number, string>)[status] ?? 'INTERNAL_ERROR';
+    response.status(status).json({ code, message: status === 500 ? 'Internal server error' : error instanceof Error ? error.message : 'Request failed', requestId });
   }
 }

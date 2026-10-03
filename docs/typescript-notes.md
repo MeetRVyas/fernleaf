@@ -11,3 +11,9 @@ The compiler uses `strict: true`: a value can be used only after its type is kno
 `TxRunner.run(async tx => ...)` passes one Prisma transaction client into a use case. A repository can use that `tx` for all writes, so an exception rolls the entire operation back. `HookBus.emit(tx, event, payload)` awaits subscribers in the same transaction.
 
 ESM imports use `.js` in source paths such as `import { Clock } from './clock.js'`. TypeScript resolves the `.ts` source when checking and leaves a valid `.js` path in emitted code.
+
+Nest constructor parameters use explicit `@Inject(Service)` decorators. The fast `tsx` and Vitest transpilers do not emit TypeScript's constructor metadata, so the explicit token tells Nest what to provide in both development and tests. For example, `constructor(@Inject(Clock) private readonly clock: Clock) {}` asks Nest for the shared clock.
+
+The database tests use Vitest `globalSetup` to create a uniquely named template database and apply committed migrations once. A setup file clones the template for each worker and sets `DATABASE_URL` to that clone. The global teardown drops all databases created for the run.
+
+`HookBus<Events>` is generic: each event name selects its payload type. A module can define an event map such as `{ 'order.confirmed': { orderId: string } }` and use `HookBus<ThatMap>`. The internal wrapper stores handlers together while preserving that pair at every public `on` and `emit` call.
