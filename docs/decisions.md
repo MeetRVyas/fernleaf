@@ -174,3 +174,8 @@ Dish images are a URL text field in Tier 1 (seed data uses stock image URLs). Th
 ## 9. Proposed and open decisions
 
 Add proposals here. Defaults already assumed: the kitchen and all companies share one time zone; packaging values are STANDARD, ECO, INSULATED; the order form disables fields the employee may not change.
+
+- **Proposed decision (Session A):** Use ESLint `no-restricted-imports` for cross-module public API boundaries, allowing only `modules/<name>/index.js` from outside a module. This is the simplest rule compatible with the ESM source layout; verify the rule with a deliberately invalid import before the platform milestone is committed.
+- **Proposed decision (Session A):** The single-instance API throttles login after five failed attempts per normalized email for 15 minutes in memory. If the deployment later runs more than one API instance, move this limit to a shared store or database.
+- **Proposed decision (Session A):** Keep the Prisma runtime pool at five connections and apply migrations on the direct `DATABASE_URL`. Each test run creates a unique template database, migrates it once, clones it by worker, and drops the clones afterwards.
+- **Proposed decision (Session A):** Bind local Compose PostgreSQL to host port 55432. Another local PostgreSQL server occupies port 5432, so this keeps the worktree's `fernleaf_a` database isolated. CI keeps its own port 5432 service.

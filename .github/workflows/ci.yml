@@ -1,0 +1,33 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: fernleaf
+          POSTGRES_PASSWORD: fernleaf
+          POSTGRES_DB: fernleaf_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U fernleaf -d fernleaf_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://fernleaf:fernleaf@localhost:5432/fernleaf_ci?schema=public
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm --filter @fernleaf/api exec prisma generate
+      - run: corepack pnpm lint
+      - run: corepack pnpm typecheck
+      - run: corepack pnpm test
+      - run: corepack pnpm --filter @fernleaf/api exec prisma migrate deploy
+      - run: corepack pnpm test:db
+      - name: Check schema and migration drift
+        run: corepack pnpm db:drift

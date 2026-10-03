@@ -1,0 +1,33 @@
+{
+  "name": "fernleaf-kitchen",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.34.6",
+  "scripts": {
+    "install:all": "pnpm install",
+    "dev": "pnpm --filter @fernleaf/api dev",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit && pnpm -r --if-present typecheck",
+    "test": "vitest run",
+    "test:db": "vitest run --config vitest.db.config.ts",
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down",
+    "db:migrate": "pnpm --filter @fernleaf/api exec prisma migrate dev",
+    "db:seed": "pnpm --filter @fernleaf/api exec tsx prisma/seed.ts",
+    "db:drift": "pnpm --filter @fernleaf/api db:drift",
+    "gen:module": "tsx tools/gen-module.ts",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "22.19.15",
+    "@typescript-eslint/eslint-plugin": "8.71.0",
+    "@typescript-eslint/parser": "8.71.0",
+    "eslint": "10.12.0",
+    "eslint-plugin-boundaries": "7.2.0",
+    "prettier": "3.9.9",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vitest": "5.0.3"
+  }
+}
