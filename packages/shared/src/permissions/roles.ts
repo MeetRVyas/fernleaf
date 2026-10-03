@@ -6,5 +6,6 @@ export const ROLES = ['ADMIN', 'KITCHEN', 'DISPATCH', 'DRIVER'] as const;
 export type Role = (typeof ROLES)[number];
 const ALL = [...Object.values(AUTH_PERM), ...Object.values(STAFF_PERM)];
 const BASE = [AUTH_PERM.me, AUTH_PERM.logout];
-export const ROLE_PERMISSIONS: Record<Role, readonly string[]> = { ADMIN: ALL, KITCHEN: BASE, DISPATCH: BASE, DRIVER: BASE };
-export function can(user: { role: Role }, permission: string): boolean { return ROLE_PERMISSIONS[user.role].includes(permission); }
+export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = { ADMIN: ALL, KITCHEN: BASE, DISPATCH: BASE, DRIVER: BASE };
+export function can(user: { role: Role }, permission: Permission): boolean { return ROLE_PERMISSIONS[user.role].includes(permission); }
+export function isAdmin(user: { role: Role }): boolean { return user.role === 'ADMIN'; }

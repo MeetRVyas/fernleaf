@@ -1,3 +1,4 @@
+import './instrument.js';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
@@ -6,10 +7,8 @@ import type { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module.js';
 import { env } from './core/config.js';
 import { logger } from './core/logger.js';
-import * as Sentry from '@sentry/node';
 
 async function bootstrap(): Promise<void> {
-  if (env.SENTRY_DSN) Sentry.init({ dsn: env.SENTRY_DSN });
   const app = await NestFactory.create(AppModule, { logger: false });
   app.setGlobalPrefix('api');
   app.enableShutdownHooks();

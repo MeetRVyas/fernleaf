@@ -9,7 +9,7 @@ export function kitchenToday(now: Date, zone: string): string {
 export function kitchenInstant(date: string, time: string, zone: string): string {
   const value = DateTime.fromISO(`${date}T${time}`, { zone });
   if (!value.isValid) throw new RangeError(value.invalidExplanation ?? 'Invalid kitchen time');
-  return value.toUTC().toISO()!;
+  return value.toUTC().toISO({ suppressMilliseconds: true })!;
 }
 
 export function kitchenDate(instant: Date, zone: string): string {

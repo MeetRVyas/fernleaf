@@ -14,6 +14,6 @@ for (const [name, email, role] of [
   ['Kitchen', 'kitchen@test.com', 'KITCHEN'],
   ['Dispatch', 'dispatch@test.com', 'DISPATCH'],
   ['Driver', 'driver@test.com', 'DRIVER'],
-]) await db.staffUser.upsert({ where: { email }, update: { name, role }, create: { name, email, role, passwordHash } });
+]) await db.staffUser.upsert({ where: { email }, update: { name, role, isActive: true }, create: { name, email, role, passwordHash, isActive: true } });
 await db.$disconnect();
 await pool.end();

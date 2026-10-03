@@ -7,8 +7,8 @@ import { AuthService } from './auth.service.js';
 @Controller()
 export class AuthController {
   constructor(@Inject(AuthService) private readonly service: AuthService) {}
-  @Route(login) async login(@Input() input: InputOf<typeof login>, @Res({ passthrough: true }) response: Response) {
-    const result = await this.service.login(input.body.email, input.body.password);
+  @Route(login) async login(@Input() input: InputOf<typeof login>, @Req() request: Request, @Res({ passthrough: true }) response: Response) {
+    const result = await this.service.login(input.body.email, input.body.password, request.ip ?? request.socket.remoteAddress ?? 'unknown');
     response.cookie('session', result.token, { httpOnly: true, secure: env.COOKIE_SECURE === 'true', sameSite: 'lax', path: '/api', maxAge: 7 * 24 * 60 * 60 * 1000 });
     return result.user;
   }

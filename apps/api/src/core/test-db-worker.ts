@@ -16,3 +16,4 @@ await admin.end();
 const testUrl = new URL(source);
 testUrl.pathname = `/${name}`;
 process.env.DATABASE_URL = testUrl.toString();
+process.env.VALIDATE_RESPONSES = 'true';
