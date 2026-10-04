@@ -33,12 +33,14 @@ Dish images are a URL text field in Tier 1 (seed data uses stock image URLs). Th
 ## 3. Catalogue, menu, pricing
 
 **Catalogue**
+
 - **C1** A dish has name, description, `imageUrl`, `sku` (unique), `temperature` (HOT or COLD), `costCents`, allergens, dietary tags, `stationId` (nullable), `minOrderQty` (integer, at least 1, default 1), `isActive`.
 - **C2** An option has name, `costCents`, allergens, dietary tags, `isActive`. Options are reusable across groups.
 - **C3** An option group belongs to one dish. It has name, `isRequired`, `sortOrder`, and an ordered list of options (`OptionGroupOption`, unique per group and option). Groups are single-choice: a combination picks at most one option per group, and exactly one if the group is required.
 - **C4** Allergens, dietary tags and kitchen stations are admin-managed lists. A dish with no station is routed to "Unassigned".
 
 **Menu**
+
 - **M1** `MenuCategory` has name, `sortOrder`, `isActive`, `isSecret`. `MenuItem` links a category to a dish (unique per category and dish) with `sortOrder` and `isActive`. A dish can appear in several categories.
 - **M2** Hiding is per company, at category level (`CompanyHiddenCategory`) and at menu-item level (`CompanyHiddenItem`).
 - **M3** An employee's menu contains: active categories that are not hidden for their company and not secret, containing active menu items that are not hidden, whose dish is active, priced on the employee's tier, and has at least one offered option in every required group. Options shown are active and priced on the tier. An optional group with no offered options is dropped.
@@ -46,6 +48,7 @@ Dish images are a URL text field in Tier 1 (seed data uses stock image URLs). Th
 - **M5** Staff preview uses the same code path as the employee menu (`MenuPort.getMenuFor(employeeId)`). The preview has an "open category by id" box for secret categories.
 
 **Pricing**
+
 - **P1** `PriceTier` has a unique name, `isDefault` and a derivation rule. Exactly one tier is the default (partial unique index). The default tier cannot be deactivated.
 - **P2** `PriceEntry` holds manual prices only: `tierId`, `subjectType` (DISH or OPTION), `subjectId`, `priceCents`, unique per tier and subject. A dish price must be above 0. An option price may be 0.
 - **P3** A tier's derivation is one of: `NONE`; `COST_MULTIPLIER {factorMilli}`; `PERCENT_OVER_TIER {baseTierId, percentBp}`. Cycles are rejected on save and chains are limited to 5. Derived prices are computed on read by a pure function and never stored.
@@ -58,6 +61,7 @@ Dish images are a URL text field in Tier 1 (seed data uses stock image URLs). Th
 - **P7** Prices are snapshotted into the order and never recomputed afterwards (see O5).
 
 **Test vectors (pricing)**
+
 - `roundUpTo5(211)=215`, `(210)=210`, `(1)=5`, `(0)=0`, `(214)=215`, `(216)=220`
 - Cost 88, `factorMilli` 2400 gives 211.2 exact, so **215**
 - Base 333, `percentBp` 1500 gives 382.95 exact, so **385**
@@ -82,6 +86,7 @@ Dish images are a URL text field in Tier 1 (seed data uses stock image URLs). Th
 ## 5. Orders and cut-off
 
 **Who and what**
+
 - **O0** Only ADMIN creates and edits orders. Kitchen, dispatch and driver have read or action permissions only.
 - **O1** Statuses: `DRAFT, PLACED, CONFIRMED, DELIVERED, CANCELLED, REJECTED`. Allowed transitions:
   - DRAFT to PLACED (admin, before cut-off) or to CANCELLED
@@ -110,6 +115,7 @@ Dish images are a URL text field in Tier 1 (seed data uses stock image URLs). Th
 - **O8** The order list supports filters on delivery date range, status (multi), company, `invoiced` (yes, no, any), free text (order number, employee name or email, company name), sort and server-side paging.
 
 **Cut-off**
+
 - **K1** Settings: `cutoff.time` (HH:mm, default 16:00), `cutoff.workingDaysBefore` (default 2), `kitchen.workingDays` (default Mon to Fri), kitchen holidays (a table), `cutoff.autoProcess` (default true).
 - **K2** `cutoffInstant(deliveryDate)`: start at the delivery date. Step back one day at a time, counting a day only if it is a kitchen working day (not a holiday). Stop after `N` counted days. The cut-off is that date at `cutoff.time` in the kitchen zone, converted to UTC. An order is locked when `now >= cutoffInstant`. The delivery date itself does not need to be a kitchen working day. With `N = 0` the cut-off is the delivery date itself.
 - **K3** `processCutoff(date)` is idempotent and transactional. It fails with `CUTOFF_NOT_REACHED` if the cut-off has not passed. It takes `pg_advisory_xact_lock` for the date, cancels all DRAFT orders for the date (reason "Cut-off"), confirms all PLACED orders, emits `order.confirmed` per order, and records `CutoffRun(deliveryDate unique, processedAt, draftsCancelled, ordersConfirmed)`. A second run returns the stored counts with `alreadyProcessed: true`. Confirmation does not re-validate the menu.
@@ -117,6 +123,7 @@ Dish images are a URL text field in Tier 1 (seed data uses stock image URLs). Th
 - **K5** Scheduler: an in-process tick every minute (`SCHEDULER_MODE=internal`) that does not query the database on ticks where nothing newly became due. Compute in memory the latest delivery date whose cut-off has passed. Query the database only when that date changes, on boot (catch-up), and after a settings change. Also expose a secret-protected endpoint (`CRON_SECRET`) so an external cron can trigger it. This keeps a scale-to-zero database asleep.
 
 **Test vectors (cut-off, default settings, `America/New_York`)**
+
 - Wed 2026-10-07 gives Mon 2026-10-05 16:00 local
 - Mon 2026-10-12 gives Thu 2026-10-08 16:00 local
 - Wed 2026-10-07 with Mon 2026-10-05 as a holiday gives Fri 2026-10-02 16:00 local
@@ -180,9 +187,11 @@ Add proposals here. Defaults already assumed: the kitchen and all companies shar
 - **Proposed decision (Session A):** Keep the Prisma runtime pool at five connections and apply migrations on the direct `DATABASE_URL`. Each test run creates a unique template database, migrates it once, clones it by worker, and drops the clones afterwards.
 - **Proposed decision (Session A):** Bind local Compose PostgreSQL to host port 55432. Another local PostgreSQL server occupies port 5432, so this keeps the worktree's `fernleaf_a` database isolated. CI keeps its own port 5432 service.
 - **Proposed decision (Session A):** Use `127.0.0.1` in the local database URL. The pinned Prisma schema engine could not connect through `localhost` on this Windows host, while the `pg` driver could; explicit IPv4 fixed migration creation.
-- **Proposed decision (Session B1):** A partial unique index enforces *at most one* default tier and default address per company; the tier/company services must enforce existence during create, reassignment and deactivation because a row-local CHECK or partial unique index cannot enforce *at least one* across rows. Draft orders may leave address and address snapshot null until placement.
+- **Proposed decision (Session B1):** A partial unique index enforces _at most one_ default tier and default address per company; the tier/company services must enforce existence during create, reassignment and deactivation because a row-local CHECK or partial unique index cannot enforce _at least one_ across rows. Draft orders may leave address and address snapshot null until placement.
 - **Proposed decision (Session B1):** Store settings values as strings validated by the shared settings registry, and company working days as a PostgreSQL integer array (nonempty, values 1–7). These are typed data rather than snapshot JSON. Services reject duplicate weekdays. `PriceEntry.subjectId` is polymorphic by `subjectType`, so the pricing service validates the referenced dish or option; PostgreSQL cannot attach one ordinary foreign key to two tables.
 - **Proposed decision (Session A follow-up):** Login throttling uses client IP plus normalized email, with five failures in a sliding five-minute window. The in-memory map removes expired entries and caps at 10,000 keys; a deployment with multiple API instances needs a shared store.
 - **Proposed decision (Session A follow-up):** Staff role changes and deactivations take a transaction-level advisory lock before checking whether another active admin remains. This serializes concurrent admin removal attempts.
 - **Proposed decision (Session A follow-up):** The API uses 201 only for resource creation and 200 for other successful commands, matching OpenAPI. A malformed JSON body gets 400 `MALFORMED_JSON`; valid JSON that fails a contract gets 422 `VALIDATION_ERROR`.
 - **Proposed decision (Session W):** Until feature permissions and settings contracts arrive, the web navigation registers only the shared `auth:me` Home item. Role landing pages are placeholders and the kitchen-time formatters require an explicit zone supplied by future settings data. This avoids inventing feature permissions or a browser-time-zone fallback.
+- **Proposed decision (Session 3B):** Company owner and default driver assignment return a validation error until the owning Employee and Auth modules expose lookup ports. The current company contracts carry these IDs, but this session may not read those modules' tables or edit their public APIs. A follow-up integration change should verify that an owner belongs to the company and that a default driver has the driver permission before allowing assignment.
+- **Proposed decision (Session 3B):** Feature screens live in the owned `apps/web/src/features/{settings,companies,employees}` folders. The route and navigation files are outside this session's ownership, so the web session should wire these screen exports into thin App Router pages and the nav registry after merge.

@@ -17,12 +17,12 @@ settings, kitchen_holidays. Other modules are accessed through ports.
 
 Source: `packages/shared/src/contracts/settings.ts`. Multi-value query filters use repeated keys when a route defines one.
 
-| Id | Method and path | Permission | Request | Response | Errors |
-|---|---|---|---|---|---|
-| `settings.list` | `GET /settings` | `settings:read` | shared zod input | shared zod response | 501 until session implementation |
-| `settings.update` | `PUT /settings/:key` | `settings:manage` | shared zod input | shared zod response | 501 until session implementation |
-| `settings.listHolidays` | `GET /kitchen-holidays` | `settings:read` | shared zod input | shared zod response | 501 until session implementation |
-| `settings.createHoliday` | `POST /kitchen-holidays` | `settings:manage` | shared zod input | shared zod response | 501 until session implementation |
+| Id                       | Method and path                | Permission        | Request          | Response            | Errors                           |
+| ------------------------ | ------------------------------ | ----------------- | ---------------- | ------------------- | -------------------------------- |
+| `settings.list`          | `GET /settings`                | `settings:read`   | shared zod input | shared zod response | 501 until session implementation |
+| `settings.update`        | `PUT /settings/:key`           | `settings:manage` | shared zod input | shared zod response | 501 until session implementation |
+| `settings.listHolidays`  | `GET /kitchen-holidays`        | `settings:read`   | shared zod input | shared zod response | 501 until session implementation |
+| `settings.createHoliday` | `POST /kitchen-holidays`       | `settings:manage` | shared zod input | shared zod response | 501 until session implementation |
 | `settings.deleteHoliday` | `DELETE /kitchen-holidays/:id` | `settings:manage` | shared zod input | shared zod response | 501 until session implementation |
 
 ## 4. Domain rules
@@ -59,13 +59,16 @@ The settings feature screens follow the contract paths, use typed-client calls a
 
 ## 10. Acceptance (demo script)
 
-1. Open /settings as a permitted staff user after S2 is merged; verify settings.list returns the contract response.
-2. Open /settings/:key as a permitted staff user after S2 is merged; verify settings.update returns the contract response.
-3. Open /kitchen-holidays as a permitted staff user after S2 is merged; verify settings.listHolidays returns the contract response.
+1. Sign in as an admin and open the Settings screen after the web route is wired. Confirm eight settings appear with defaults.
+2. Change `cutoff.time` to `15:45`, save, reload, and confirm the value persists.
+3. Add a kitchen holiday, confirm it appears, then delete it. Repeating the same date returns a conflict.
+4. Sign in without `settings:manage` and confirm edit controls are hidden. The API guard remains authoritative.
 
 ## 11. Out of scope
 
-Business implementation and UI remain assigned to S2; this session delivers contracts, ports, 501 shells and specifications. Tier 2 features follow decisions.md section 1.
+- App Router page and navigation registration are owned by the web session; this session supplies `SettingsScreen` in its feature folder.
+- The shared contract still lists `NOT_IMPLEMENTED` in route error metadata. Removing it and aligning the documented validation errors needs a small shared-contract change before integration.
+- Tier 2 features remain deferred by decisions.md section 1.
 
 ## 12. Files and boundaries
 
@@ -81,4 +84,4 @@ Recheck response conformance and the named database constraints when replacing a
 
 ## 15. How it works
 
-`@Route(contract)` binds method, path and permission. The global interceptor validates request input; the shell throws `NOT_IMPLEMENTED` (501). S2 replaces it with a thin service call, transaction, repository query and pure domain rule.
+`@Route(contract)` validates input and permissions. The service reads the eight shared registry keys, filling absent database rows with defaults. Updates validate the key-specific zod schema, write a JSON-encoded string in one transaction, and invalidate the settings cache. The `SettingsPort` uses the shared date helper and stored holidays to answer whether a kitchen date is a working day. Holiday create and delete run in transactions; dates are unique. The feature screen uses the typed API client and shows loading, empty, error and permission states.
