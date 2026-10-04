@@ -1,80 +1,24 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import {
-  listAllergens,
-  createAllergen,
-  updateAllergen,
-  listDietaryTags,
-  createDietaryTag,
-  updateDietaryTag,
-  listKitchenStations,
-  createKitchenStation,
-  updateKitchenStation,
+  listAllergens, createAllergen, updateAllergen,
+  listDietaryTags, createDietaryTag, updateDietaryTag,
+  listKitchenStations, createKitchenStation, updateKitchenStation,
+  type InputOf,
 } from '@fernleaf/shared';
-import { Route } from '../../core/route.js';
-import { ApiError } from '../../core/api-error.js';
+import { Route, Input } from '../../core/route.js';
+import { ReferenceService } from './reference.service.js';
+
 @Controller()
 export class ReferenceController {
-  @Route(listAllergens) listAllergens(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'reference.listAllergens is not implemented',
-      501,
-    );
-  }
-  @Route(createAllergen) createAllergen(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'reference.createAllergen is not implemented',
-      501,
-    );
-  }
-  @Route(updateAllergen) updateAllergen(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'reference.updateAllergen is not implemented',
-      501,
-    );
-  }
-  @Route(listDietaryTags) listDietaryTags(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'reference.listDietaryTags is not implemented',
-      501,
-    );
-  }
-  @Route(createDietaryTag) createDietaryTag(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'reference.createDietaryTag is not implemented',
-      501,
-    );
-  }
-  @Route(updateDietaryTag) updateDietaryTag(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'reference.updateDietaryTag is not implemented',
-      501,
-    );
-  }
-  @Route(listKitchenStations) listKitchenStations(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'reference.listKitchenStations is not implemented',
-      501,
-    );
-  }
-  @Route(createKitchenStation) createKitchenStation(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'reference.createKitchenStation is not implemented',
-      501,
-    );
-  }
-  @Route(updateKitchenStation) updateKitchenStation(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'reference.updateKitchenStation is not implemented',
-      501,
-    );
-  }
+  constructor(@Inject(ReferenceService) private readonly service: ReferenceService) {}
+
+  @Route(listAllergens) listAllergens(@Input() input: InputOf<typeof listAllergens>) { return this.service.list('allergen', input.query); }
+  @Route(createAllergen) createAllergen(@Input() input: InputOf<typeof createAllergen>) { return this.service.create('allergen', input.body); }
+  @Route(updateAllergen) updateAllergen(@Input() input: InputOf<typeof updateAllergen>) { return this.service.update('allergen', input.params.id, input.body); }
+  @Route(listDietaryTags) listDietaryTags(@Input() input: InputOf<typeof listDietaryTags>) { return this.service.list('dietaryTag', input.query); }
+  @Route(createDietaryTag) createDietaryTag(@Input() input: InputOf<typeof createDietaryTag>) { return this.service.create('dietaryTag', input.body); }
+  @Route(updateDietaryTag) updateDietaryTag(@Input() input: InputOf<typeof updateDietaryTag>) { return this.service.update('dietaryTag', input.params.id, input.body); }
+  @Route(listKitchenStations) listKitchenStations(@Input() input: InputOf<typeof listKitchenStations>) { return this.service.list('kitchenStation', input.query); }
+  @Route(createKitchenStation) createKitchenStation(@Input() input: InputOf<typeof createKitchenStation>) { return this.service.create('kitchenStation', input.body); }
+  @Route(updateKitchenStation) updateKitchenStation(@Input() input: InputOf<typeof updateKitchenStation>) { return this.service.update('kitchenStation', input.params.id, input.body); }
 }

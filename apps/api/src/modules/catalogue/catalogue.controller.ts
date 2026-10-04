@@ -1,96 +1,25 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import {
-  listDishes,
-  getDish,
-  createDish,
-  updateDish,
-  listOptions,
-  createOption,
-  updateOption,
-  listGroups,
-  createGroup,
-  updateGroup,
-  deleteGroup,
+  listDishes, getDish, createDish, updateDish,
+  listOptions, createOption, updateOption,
+  listGroups, createGroup, updateGroup, deleteGroup,
+  type InputOf,
 } from '@fernleaf/shared';
-import { Route } from '../../core/route.js';
-import { ApiError } from '../../core/api-error.js';
+import { Route, Input } from '../../core/route.js';
+import { CatalogueService } from './catalogue.service.js';
+
 @Controller()
 export class CatalogueController {
-  @Route(listDishes) listDishes(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'catalogue.listDishes is not implemented',
-      501,
-    );
-  }
-  @Route(getDish) getDish(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'catalogue.getDish is not implemented',
-      501,
-    );
-  }
-  @Route(createDish) createDish(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'catalogue.createDish is not implemented',
-      501,
-    );
-  }
-  @Route(updateDish) updateDish(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'catalogue.updateDish is not implemented',
-      501,
-    );
-  }
-  @Route(listOptions) listOptions(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'catalogue.listOptions is not implemented',
-      501,
-    );
-  }
-  @Route(createOption) createOption(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'catalogue.createOption is not implemented',
-      501,
-    );
-  }
-  @Route(updateOption) updateOption(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'catalogue.updateOption is not implemented',
-      501,
-    );
-  }
-  @Route(listGroups) listGroups(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'catalogue.listGroups is not implemented',
-      501,
-    );
-  }
-  @Route(createGroup) createGroup(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'catalogue.createGroup is not implemented',
-      501,
-    );
-  }
-  @Route(updateGroup) updateGroup(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'catalogue.updateGroup is not implemented',
-      501,
-    );
-  }
-  @Route(deleteGroup) deleteGroup(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'catalogue.deleteGroup is not implemented',
-      501,
-    );
-  }
+  constructor(@Inject(CatalogueService) private readonly service: CatalogueService) {}
+  @Route(listDishes) listDishes(@Input() input: InputOf<typeof listDishes>) { return this.service.listDishes(input.query); }
+  @Route(getDish) getDish(@Input() input: InputOf<typeof getDish>) { return this.service.dishDetail(input.params.id); }
+  @Route(createDish) createDish(@Input() input: InputOf<typeof createDish>) { return this.service.createDish(input.body); }
+  @Route(updateDish) updateDish(@Input() input: InputOf<typeof updateDish>) { return this.service.updateDish(input.params.id, input.body); }
+  @Route(listOptions) listOptions(@Input() input: InputOf<typeof listOptions>) { return this.service.listOptions(input.query); }
+  @Route(createOption) createOption(@Input() input: InputOf<typeof createOption>) { return this.service.createOption(input.body); }
+  @Route(updateOption) updateOption(@Input() input: InputOf<typeof updateOption>) { return this.service.updateOption(input.params.id, input.body); }
+  @Route(listGroups) listGroups(@Input() input: InputOf<typeof listGroups>) { return this.service.listGroups(input.params.id); }
+  @Route(createGroup) createGroup(@Input() input: InputOf<typeof createGroup>) { return this.service.createGroup(input.params.id, input.body); }
+  @Route(updateGroup) updateGroup(@Input() input: InputOf<typeof updateGroup>) { return this.service.updateGroup(input.params.id, input.body); }
+  @Route(deleteGroup) deleteGroup(@Input() input: InputOf<typeof deleteGroup>) { return this.service.deleteGroup(input.params.id); }
 }
