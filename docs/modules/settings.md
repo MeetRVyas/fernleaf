@@ -67,6 +67,7 @@ The settings feature screens follow the contract paths, use typed-client calls a
 ## 11. Out of scope
 
 - App Router page and navigation registration are owned by the web session; this session supplies `SettingsScreen` in its feature folder.
+- The shared contract still lists `NOT_IMPLEMENTED` in route error metadata. Removing it and aligning the documented validation errors needs a small shared-contract change before integration.
 - Tier 2 features remain deferred by decisions.md section 1.
 
 ## 12. Files and boundaries

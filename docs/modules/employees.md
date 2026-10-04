@@ -68,6 +68,7 @@ The employees feature screens follow the contract paths, use typed-client calls 
 
 - Allergy and dietary link writes work in the API, but the screen cannot present pickers until the Reference UI and read routes are integrated.
 - App Router page and navigation registration are owned by the web session; this session supplies `EmployeesScreen`.
+- The shared contract still lists `NOT_IMPLEMENTED` in route error metadata. Removing it and aligning the documented validation errors needs a small shared-contract change before integration.
 - CSV import is a [Should] item intentionally skipped in decisions.md section 1.
 
 ## 12. Files and boundaries

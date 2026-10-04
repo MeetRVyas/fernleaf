@@ -74,6 +74,7 @@ The companies feature screens follow the contract paths, use typed-client calls 
 
 - Company owner and default driver assignment need Employee and Auth lookup ports. This session cannot add those ports under its ownership boundary, so new non-null assignments return validation errors. See decisions.md section 9.
 - App Router page and navigation registration are owned by the web session; this session supplies `CompaniesScreen`.
+- The shared contract still lists `NOT_IMPLEMENTED` in route error metadata. Removing it and aligning the documented validation errors needs a small shared-contract change before integration.
 - Tier 2 features remain deferred by decisions.md section 1.
 
 ## 12. Files and boundaries
