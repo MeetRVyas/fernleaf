@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
-import { createDish, createOption, createGroup, getDish, listDishes, listOptions, listGroups } from '@fernleaf/shared';
+import { createDish, updateDish, createOption, updateOption, createGroup, updateGroup, deleteGroup, getDish, listDishes, listOptions, listGroups } from '@fernleaf/shared';
 import { PrismaService } from '../../core/prisma.service.js';
 import { TxRunner } from '../../core/tx-runner.js';
 import type { ReferencePort } from '../reference/index.js';
@@ -33,7 +33,7 @@ describe('Catalogue with PostgreSQL', () => {
     expect(getDish.response.parse(await service.dishDetail(result.id)).groups).toEqual([]);
     expect(listDishes.response.parse(await service.listDishes({ page: 1, pageSize: 100, q: sku })).items).toContainEqual(result);
     await expect(service.createDish({ name: 'Duplicate', description: '', imageUrl: null, sku: sku.toUpperCase(), temperature: 'COLD', costCents: 0, stationId: null, minOrderQty: 1, allergenIds: [], dietaryTagIds: [], isActive: true })).rejects.toMatchObject({ code: 'CONFLICT' });
-    const updated = await service.updateDish(result.id, { stationId: null, isActive: false });
+    const updated = updateDish.response.parse(await service.updateDish(result.id, { stationId: null, isActive: false }));
     expect(updated.stationId).toBeNull();
     expect(updated.isActive).toBe(false);
   });
@@ -44,11 +44,20 @@ describe('Catalogue with PostgreSQL', () => {
     const option = await service.createOption({ name: 'Tofu', costCents: 25, allergenIds: [], dietaryTagIds: [], isActive: true });
     expect(createOption.response.parse(option).name).toBe('Tofu');
     expect(listOptions.response.parse(await service.listOptions({ page: 1, pageSize: 100, q: 'Tofu' })).items).toContainEqual(option);
+    expect(updateOption.response.parse(await service.updateOption(option.id, { costCents: 30 })).costCents).toBe(30);
     const group = await service.createGroup(dish.id, { name: 'Protein', isRequired: true, sortOrder: 1, options: [{ optionId: option.id, sortOrder: 0 }] });
     expect(createGroup.response.parse(group).options).toEqual([{ optionId: option.id, sortOrder: 0 }]);
     expect(listGroups.response.parse(await service.listGroups(dish.id))).toContainEqual(group);
+    expect(updateGroup.response.parse(await service.updateGroup(group.id, { sortOrder: 2 })).sortOrder).toBe(2);
     await expect(service.updateGroup(group.id, { options: [{ optionId: option.id, sortOrder: 0 }, { optionId: option.id, sortOrder: 1 }] })).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
-    await service.deleteGroup(group.id);
+    deleteGroup.response.parse(await service.deleteGroup(group.id));
     expect(await service.listGroups(dish.id)).toEqual([]);
+  });
+
+  it('lets exactly one of two concurrent creates claim a SKU', async () => {
+    const body = { name: 'Concurrent', description: '', imageUrl: null, sku: `race-${randomUUID()}`, temperature: 'HOT' as const, costCents: 10, stationId: null, minOrderQty: 1, allergenIds: [], dietaryTagIds: [], isActive: true };
+    const results = await Promise.allSettled([service.createDish(body), service.createDish(body)]);
+    expect(results.filter(result => result.status === 'fulfilled')).toHaveLength(1);
+    expect(results.filter(result => result.status === 'rejected')).toHaveLength(1);
   });
 });
