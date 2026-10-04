@@ -18,6 +18,12 @@ The database tests use Vitest `globalSetup` to create a uniquely named template 
 
 `HookBus<Events>` is generic: each event name selects its payload type. A module can define an event map such as `{ 'order.confirmed': { orderId: string } }` and use `HookBus<ThatMap>`. The internal wrapper stores handlers together while preserving that pair at every public `on` and `emit` call.
 
+Permission files export a permission object and role grants. `roles.ts` gathers them into `PERM` and `ROLE_PERMISSIONS`; adding a role grant in a module does not require editing the central role map. `as const` keeps each permission string exact. A mapped type gathers those strings into `Permission`, so a route cannot use an unknown permission.
+
+For list filters with multiple values, the typed client repeats the query key (`status=PLACED&status=CONFIRMED`). `arrayQueryParam` accepts either one string or an array from Express and produces an array in the validated route input. The same contract handles both a single selection and several selections.
+
+A stub port keeps the same method parameters as the real adapter. When a no-op stub does not use a parameter, `void parameter` explicitly marks that it was intentionally ignored so lint can still catch accidental unused variables elsewhere. The stub's return is fixed fixture data; business logic must replace the stub before the feature is accepted.
+
 ## React and TypeScript in the web app
 
 React components return JSX. A `.tsx` file lets TypeScript check both JavaScript expressions and component props. `RootLayout({ children }: { children: ReactNode })` says the layout accepts any React content as its child. A client component starts with `'use client'` when it uses hooks, browser events, or a provider; route files can remain thin server components.
