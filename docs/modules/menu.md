@@ -63,13 +63,17 @@ The menu feature screens follow the contract paths, use typed-client calls and U
 
 ## 10. Acceptance (demo script)
 
-1. Open /menu-categories as a permitted staff user after S1 is merged; verify menu.listCategories returns the contract response.
-2. Open /menu-categories as a permitted staff user after S1 is merged; verify menu.createCategory returns the contract response.
-3. Open /menu-categories/:id as a permitted staff user after S1 is merged; verify menu.updateCategory returns the contract response.
+1. Sign in as an admin and create an active category with `POST /api/menu-categories`.
+2. Add a dish with `POST /api/menu-items`, then preview an employee through `GET /api/employees/:id/menu`.
+3. Hide that item for the employee's company. Refresh the preview: the dish is absent, and `MenuPort.getOrderableDish` returns null.
+4. Create a secret category and open it by ID with `GET /api/employees/:id/menu/categories/:categoryId`; it stays out of the ordinary listing.
+5. Open `MenuScreen` once the web shell mounts it. Create a category and item, set hiding, and preview an employee.
 
 ## 11. Out of scope
 
-Business implementation and UI remain assigned to S1; this session delivers contracts, ports, 501 shells and specifications. Tier 2 features follow decisions.md section 1.
+- Required and optional option-group filtering cannot be completed through the current `CataloguePort`, which exposes only `getDish` and `getOptions`. The preview currently returns dishes with an empty `groups` array. Add a group-and-membership read method to the catalogue public port, then resolve active option prices before using MenuPort for order placement.
+- The web shell's App Router pages and navigation registry are outside this session's allowed folders. `MenuScreen` is implemented in the feature folder but needs a thin route and nav entry from the shell owner.
+- End-to-end preview for stored company and employee records awaits their real port providers. This branch tests against deterministic stubs.
 
 ## 12. Files and boundaries
 
@@ -85,4 +89,4 @@ Recheck response conformance and the named database constraints when replacing a
 
 ## 15. How it works
 
-`@Route(contract)` binds method, path and permission. The global interceptor validates request input; the shell throws `NOT_IMPLEMENTED` (501). S1 replaces it with a thin service call, transaction, repository query and pure domain rule.
+The controller binds all eight shared routes to `MenuService`. Category, item, and company-hiding writes run in `TxRunner` transactions; the repository touches only menu-owned tables. The service validates dish, company, and employee references through their public ports. Employee preview resolves the company's effective tier through `PricingPort`, excludes hidden and secret categories from the listing, and applies the pure visibility predicates. Direct category preview permits a visible secret category. `getOrderableDish` uses the same preview path, including direct secret-category access. The screen uses the shared typed client and TanStack Query with permission, loading, empty, and error states.
