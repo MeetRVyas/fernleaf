@@ -38,6 +38,7 @@ export class PricingService implements PricingPort {
     this.checkRule(body);
     return this.txRunner.run(async tx => {
       const tiers = await this.repository.tiers(tx);
+      if (tiers.length === 0 && !body.isDefault) throw new ApiError('VALIDATION_ERROR', 'The first tier must be the default', 422);
       if (tiers.some(tier => tier.name === body.name || (body.isDefault && tier.isDefault))) throw new ApiError('CONFLICT', 'Tier name or default is taken', 409);
       const created = await this.repository.createTier(tx, body);
       this.checkGraph(created.id, [...tiers, created]);
@@ -60,7 +61,11 @@ export class PricingService implements PricingPort {
   async effectiveTierId(companyId: string): Promise<string> {
     const company = await this.companies.get(companyId);
     if (!company || !company.isActive) throw new ApiError('NOT_FOUND', 'Company not found', 404);
-    if (company.tierId) return company.tierId;
+    if (company.tierId) {
+      const assigned = await this.repository.tier(company.tierId);
+      if (!assigned || !assigned.isActive) throw new ApiError('VALIDATION_ERROR', 'Assigned tier is inactive', 422);
+      return assigned.id;
+    }
     const tier = await this.repository.defaultTier();
     if (!tier) throw new ApiError('VALIDATION_ERROR', 'No default tier', 422);
     return tier.id;
@@ -99,12 +104,15 @@ export class PricingService implements PricingPort {
   }
   async getTierPrices(tierId: string, query: PriceQuery) {
     if (!await this.repository.tier(tierId)) throw new ApiError('NOT_FOUND', 'Tier not found', 404);
-    // CataloguePort currently lacks a list operation; this displays known manual subjects.
-    const known = await this.repository.entries([tierId]);
-    const subjects = await Promise.all(known.map(entry => this.subject(entry.subjectType, entry.subjectId)));
+    // CataloguePort currently lacks a list operation; discover subjects from all tiers' entries.
+    const tiers = await this.repository.tiers();
+    const known = await this.repository.entries(tiers.map(item => item.id));
+    const unique = [...new Map(known.map(entry => [priceKey(entry.subjectType, entry.subjectId), entry])).values()];
+    const subjects = await Promise.all(unique.map(entry => this.subject(entry.subjectType, entry.subjectId)));
     const { graph, manual } = await this.pricingData(tierId, subjects.map(item => item.subject));
     const rows: PriceRow[] = subjects.map(({ subject, name }) => ({ subjectType: subject.type, subjectId: subject.id, name, ...resolvePrice(tierId, subject, graph, manual) }))
-      .filter(row => (!query.missingOnly || row.source === 'MISSING') && (!query.subjectType || row.subjectType === query.subjectType));
+      .filter(row => (!query.missingOnly || row.source === 'MISSING') && (!query.subjectType || row.subjectType === query.subjectType))
+      .sort((left, right) => left.name.localeCompare(right.name) || left.subjectId.localeCompare(right.subjectId));
     const page = query.page ?? 1, pageSize = query.pageSize ?? 25;
     return { items: rows.slice((page - 1) * pageSize, page * pageSize), total: rows.length, page, pageSize };
   }

@@ -70,7 +70,7 @@ The pricing feature screens follow the contract paths, use typed-client calls an
 
 ## 11. Out of scope
 
-- Full tier-editor rows, including dishes and options without manual entries, require a catalogue listing port. The current `CataloguePort` only looks up IDs. `getTierPrices` therefore lists manual subjects on the selected tier; `missingOnly` cannot expose unknown catalogue subjects. Add the read port in a small public-port change before treating the tier editor as complete.
+- Full tier-editor rows, including dishes and options without manual entries on any tier, require a catalogue listing port. The current `CataloguePort` only looks up IDs. `getTierPrices` therefore lists subjects with a manual entry on at least one tier; `missingOnly` cannot expose subjects unknown to every tier. Add the read port in a small public-port change before treating the tier editor as complete.
 - The web shell's App Router pages and navigation registry are outside this session's allowed folders. `PricingScreen` is implemented in the feature folder but needs a thin route and nav entry from the shell owner.
 - End-to-end company tier selection awaits the real `CompanyPort` provider; the current provider is the deterministic stub.
 
