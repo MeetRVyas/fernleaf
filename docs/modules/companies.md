@@ -17,17 +17,17 @@ companies, company_domains, company_addresses, company_holidays. Other modules a
 
 Source: `packages/shared/src/contracts/companies.ts`. Multi-value query filters use repeated keys when a route defines one.
 
-| Id | Method and path | Permission | Request | Response | Errors |
-|---|---|---|---|---|---|
-| `companies.list` | `GET /companies` | `companies:read` | shared zod input | shared zod response | 501 until session implementation |
-| `companies.get` | `GET /companies/:id` | `companies:read` | shared zod input | shared zod response | 501 until session implementation |
-| `companies.create` | `POST /companies` | `companies:manage` | shared zod input | shared zod response | 501 until session implementation |
-| `companies.update` | `PATCH /companies/:id` | `companies:manage` | shared zod input | shared zod response | 501 until session implementation |
+| Id                        | Method and path                 | Permission         | Request          | Response            | Errors                           |
+| ------------------------- | ------------------------------- | ------------------ | ---------------- | ------------------- | -------------------------------- |
+| `companies.list`          | `GET /companies`                | `companies:read`   | shared zod input | shared zod response | 501 until session implementation |
+| `companies.get`           | `GET /companies/:id`            | `companies:read`   | shared zod input | shared zod response | 501 until session implementation |
+| `companies.create`        | `POST /companies`               | `companies:manage` | shared zod input | shared zod response | 501 until session implementation |
+| `companies.update`        | `PATCH /companies/:id`          | `companies:manage` | shared zod input | shared zod response | 501 until session implementation |
 | `companies.createAddress` | `POST /companies/:id/addresses` | `companies:manage` | shared zod input | shared zod response | 501 until session implementation |
-| `companies.updateAddress` | `PATCH /company-addresses/:id` | `companies:manage` | shared zod input | shared zod response | 501 until session implementation |
-| `companies.listHolidays` | `GET /companies/:id/holidays` | `companies:read` | shared zod input | shared zod response | 501 until session implementation |
-| `companies.createHoliday` | `POST /companies/:id/holidays` | `companies:manage` | shared zod input | shared zod response | 501 until session implementation |
-| `companies.deleteHoliday` | `DELETE /company-holidays/:id` | `companies:manage` | shared zod input | shared zod response | 501 until session implementation |
+| `companies.updateAddress` | `PATCH /company-addresses/:id`  | `companies:manage` | shared zod input | shared zod response | 501 until session implementation |
+| `companies.listHolidays`  | `GET /companies/:id/holidays`   | `companies:read`   | shared zod input | shared zod response | 501 until session implementation |
+| `companies.createHoliday` | `POST /companies/:id/holidays`  | `companies:manage` | shared zod input | shared zod response | 501 until session implementation |
+| `companies.deleteHoliday` | `DELETE /company-holidays/:id`  | `companies:manage` | shared zod input | shared zod response | 501 until session implementation |
 
 ## 4. Domain rules
 
@@ -65,13 +65,16 @@ The companies feature screens follow the contract paths, use typed-client calls 
 
 ## 10. Acceptance (demo script)
 
-1. Open /companies as a permitted staff user after S2 is merged; verify companies.list returns the contract response.
-2. Open /companies/:id as a permitted staff user after S2 is merged; verify companies.get returns the contract response.
-3. Open /companies as a permitted staff user after S2 is merged; verify companies.create returns the contract response.
+1. Sign in as an admin and open Companies after route wiring. Create a company with a private domain and one default address.
+2. Search for the company, open it, edit its billing details, add a second address and make it the default.
+3. Add a company holiday and confirm the calendar port excludes that date. Delete the holiday.
+4. Try a public or already claimed domain and confirm the form shows the server error. View the list with read-only permission and confirm mutation controls are hidden.
 
 ## 11. Out of scope
 
-Business implementation and UI remain assigned to S2; this session delivers contracts, ports, 501 shells and specifications. Tier 2 features follow decisions.md section 1.
+- Company owner and default driver assignment need Employee and Auth lookup ports. This session cannot add those ports under its ownership boundary, so new non-null assignments return validation errors. See decisions.md section 9.
+- App Router page and navigation registration are owned by the web session; this session supplies `CompaniesScreen`.
+- Tier 2 features remain deferred by decisions.md section 1.
 
 ## 12. Files and boundaries
 
@@ -87,4 +90,4 @@ Recheck response conformance and the named database constraints when replacing a
 
 ## 15. How it works
 
-`@Route(contract)` binds method, path and permission. The global interceptor validates request input; the shell throws `NOT_IMPLEMENTED` (501). S2 replaces it with a thin service call, transaction, repository query and pure domain rule.
+The controller binds the shared routes to one service method each. The repository reads and writes the four company-owned tables. Creation and updates normalize domains, reject public and duplicate domains, require distinct working days and exactly one default address, and run in transactions. Address default changes unset the old default and set the new one in the same transaction. `CompanyPort` returns company and address details and applies working days plus holidays for delivery eligibility. The feature screen uses the typed API client for paging, edit forms, addresses and holidays.

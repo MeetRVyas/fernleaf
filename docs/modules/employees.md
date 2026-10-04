@@ -17,11 +17,11 @@ employees, employee_allergens, employee_dietary_tags. Other modules are accessed
 
 Source: `packages/shared/src/contracts/employees.ts`. Multi-value query filters use repeated keys when a route defines one.
 
-| Id | Method and path | Permission | Request | Response | Errors |
-|---|---|---|---|---|---|
-| `employees.list` | `GET /employees` | `employees:read` | shared zod input | shared zod response | 501 until session implementation |
-| `employees.get` | `GET /employees/:id` | `employees:read` | shared zod input | shared zod response | 501 until session implementation |
-| `employees.create` | `POST /employees` | `employees:manage` | shared zod input | shared zod response | 501 until session implementation |
+| Id                 | Method and path        | Permission         | Request          | Response            | Errors                           |
+| ------------------ | ---------------------- | ------------------ | ---------------- | ------------------- | -------------------------------- |
+| `employees.list`   | `GET /employees`       | `employees:read`   | shared zod input | shared zod response | 501 until session implementation |
+| `employees.get`    | `GET /employees/:id`   | `employees:read`   | shared zod input | shared zod response | 501 until session implementation |
+| `employees.create` | `POST /employees`      | `employees:manage` | shared zod input | shared zod response | 501 until session implementation |
 | `employees.update` | `PATCH /employees/:id` | `employees:manage` | shared zod input | shared zod response | 501 until session implementation |
 
 ## 4. Domain rules
@@ -59,13 +59,16 @@ The employees feature screens follow the contract paths, use typed-client calls 
 
 ## 10. Acceptance (demo script)
 
-1. Open /employees as a permitted staff user after S2 is merged; verify employees.list returns the contract response.
-2. Open /employees/:id as a permitted staff user after S2 is merged; verify employees.get returns the contract response.
-3. Open /employees as a permitted staff user after S2 is merged; verify employees.create returns the contract response.
+1. Sign in as an admin and open Employees after route wiring. Create an employee with an email on a claimed company domain.
+2. Search for the employee, open it, and change the delivery-choice flags.
+3. Try changing the email to another domain and confirm the server rejects it. Move the employee to another company and confirm the existing email is preserved.
+4. Sign in without `employees:manage` and confirm the list and read-only detail remain available when `employees:read` is granted.
 
 ## 11. Out of scope
 
-Business implementation and UI remain assigned to S2; this session delivers contracts, ports, 501 shells and specifications. Tier 2 features follow decisions.md section 1.
+- Allergy and dietary link writes work in the API, but the screen cannot present pickers until the Reference UI and read routes are integrated.
+- App Router page and navigation registration are owned by the web session; this session supplies `EmployeesScreen`.
+- CSV import is a [Should] item intentionally skipped in decisions.md section 1.
 
 ## 12. Files and boundaries
 
@@ -81,4 +84,4 @@ Recheck response conformance and the named database constraints when replacing a
 
 ## 15. How it works
 
-`@Route(contract)` binds method, path and permission. The global interceptor validates request input; the shell throws `NOT_IMPLEMENTED` (501). S2 replaces it with a thin service call, transaction, repository query and pure domain rule.
+The controller uses the shared contract for all four routes. The service checks new or changed emails against domains returned by `CompanyPort`, normalizes emails to lowercase, and keeps the existing email when changing company. The repository writes the employee and its allergy and dietary links in one transaction. `EmployeePort.get` returns the contract shape to ordering modules. The feature screen uses the typed API client for paginated search, create and edit forms, and permission states.
