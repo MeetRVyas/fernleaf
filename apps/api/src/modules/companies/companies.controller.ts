@@ -1,80 +1,17 @@
-import { Controller } from '@nestjs/common';
-import {
-  listCompanies,
-  getCompany,
-  createCompany,
-  updateCompany,
-  createCompanyAddress,
-  updateCompanyAddress,
-  listCompanyHolidays,
-  createCompanyHoliday,
-  deleteCompanyHoliday,
-} from '@fernleaf/shared';
-import { Route } from '../../core/route.js';
-import { ApiError } from '../../core/api-error.js';
+import { Controller, Inject } from '@nestjs/common';
+import { listCompanies, getCompany, createCompany, updateCompany, createCompanyAddress, updateCompanyAddress, listCompanyHolidays, createCompanyHoliday, deleteCompanyHoliday, type InputOf } from '@fernleaf/shared';
+import { Route, Input } from '../../core/route.js';
+import { CompaniesService } from './companies.service.js';
 @Controller()
 export class CompaniesController {
-  @Route(listCompanies) listCompanies(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'companies.listCompanies is not implemented',
-      501,
-    );
-  }
-  @Route(getCompany) getCompany(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'companies.getCompany is not implemented',
-      501,
-    );
-  }
-  @Route(createCompany) createCompany(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'companies.createCompany is not implemented',
-      501,
-    );
-  }
-  @Route(updateCompany) updateCompany(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'companies.updateCompany is not implemented',
-      501,
-    );
-  }
-  @Route(createCompanyAddress) createCompanyAddress(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'companies.createCompanyAddress is not implemented',
-      501,
-    );
-  }
-  @Route(updateCompanyAddress) updateCompanyAddress(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'companies.updateCompanyAddress is not implemented',
-      501,
-    );
-  }
-  @Route(listCompanyHolidays) listCompanyHolidays(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'companies.listCompanyHolidays is not implemented',
-      501,
-    );
-  }
-  @Route(createCompanyHoliday) createCompanyHoliday(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'companies.createCompanyHoliday is not implemented',
-      501,
-    );
-  }
-  @Route(deleteCompanyHoliday) deleteCompanyHoliday(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'companies.deleteCompanyHoliday is not implemented',
-      501,
-    );
-  }
+  constructor(@Inject(CompaniesService) private readonly service: CompaniesService) {}
+  @Route(listCompanies) list(@Input() input: InputOf<typeof listCompanies>) { return this.service.list(input.query); }
+  @Route(getCompany) get(@Input() input: InputOf<typeof getCompany>) { return this.service.requireCompany(input.params.id); }
+  @Route(createCompany) create(@Input() input: InputOf<typeof createCompany>) { return this.service.create(input.body); }
+  @Route(updateCompany) update(@Input() input: InputOf<typeof updateCompany>) { return this.service.update(input.params.id, input.body); }
+  @Route(createCompanyAddress) createAddress(@Input() input: InputOf<typeof createCompanyAddress>) { return this.service.createAddress(input.params.id, input.body); }
+  @Route(updateCompanyAddress) updateAddress(@Input() input: InputOf<typeof updateCompanyAddress>) { return this.service.updateAddress(input.params.id, input.body); }
+  @Route(listCompanyHolidays) listHolidays(@Input() input: InputOf<typeof listCompanyHolidays>) { return this.service.listHolidays(input.params.id); }
+  @Route(createCompanyHoliday) createHoliday(@Input() input: InputOf<typeof createCompanyHoliday>) { return this.service.createHoliday(input.params.id, input.body.date, input.body.name); }
+  @Route(deleteCompanyHoliday) deleteHoliday(@Input() input: InputOf<typeof deleteCompanyHoliday>) { return this.service.deleteHoliday(input.params.id); }
 }

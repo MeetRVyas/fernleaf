@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { COMPANY_PORT, StubCompanyPort } from './ports.js';
+import { COMPANY_PORT } from './ports.js';
 import { CompaniesController } from './companies.controller.js';
 import { CompaniesService } from './companies.service.js';
 import { CompaniesRepository } from './companies.repository.js';
@@ -8,7 +8,7 @@ import { CompaniesRepository } from './companies.repository.js';
   providers: [
     CompaniesService,
     CompaniesRepository,
-    { provide: COMPANY_PORT, useClass: StubCompanyPort },
+    { provide: COMPANY_PORT, useExisting: CompaniesService },
   ],
   exports: [COMPANY_PORT],
 })
