@@ -1,0 +1,31 @@
+{
+  "name": "@fernleaf/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fernleaf/shared": "workspace:*",
+    "@mantine/core": "9.6.3",
+    "@mantine/dates": "9.6.3",
+    "@mantine/form": "9.6.3",
+    "@mantine/hooks": "9.6.3",
+    "@mantine/notifications": "9.6.3",
+    "@tanstack/react-query": "5.104.1",
+    "mantine-form-zod-resolver": "1.3.0",
+    "next": "16.3.8",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "postcss": "8.5.28",
+    "postcss-preset-mantine": "1.18.0",
+    "postcss-simple-vars": "7.0.1"
+  }
+}
