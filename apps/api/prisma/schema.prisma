@@ -517,7 +517,6 @@ model OrderLineCombo {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
   @@unique([orderLineId, comboKey])
-  @@index([orderLineId])
   @@map("order_line_combos")
 }
 
@@ -560,7 +559,6 @@ model PrepUnit {
   doneBy StaffUser? @relation("PrepDoneBy", fields: [doneById], references: [id], onDelete: Restrict)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-  @@index([comboId])
   @@index([startedById])
   @@index([doneById])
   @@map("prep_units")
@@ -618,7 +616,7 @@ model OrderDispatchState {
 
 model Invoice {
   id String @id @default(uuid()) @db.Uuid
-  number String @unique
+  number String @unique @default(dbgenerated("('INV-'::text || lpad((nextval('invoice_number_seq'::regclass))::text, 6, '0'::text))"))
   companyId String @map("company_id") @db.Uuid
   company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
   status InvoiceStatus @default(OPEN)

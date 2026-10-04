@@ -30,6 +30,7 @@ export async function seedTestFixtures(db: PrismaClient): Promise<typeof fixture
     await db.company.upsert({
       where: { id: companyId }, update: {},
       create: { id: companyId, name: companyNames[index], tierId: index === 1 ? costBased : null,
+        defaultDeliveryTime: '12:00', workingDays: [1, 2, 3, 4, 5],
         billingName: companyNames[index], billingEmail: `billing@${domain}`, billingAddress: `${index + 1} Market Street` },
     });
     await db.companyDomain.upsert({ where: { domain }, update: {}, create: { id: fixtureId(10, index + 1), companyId, domain } });

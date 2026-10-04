@@ -1,6 +1,6 @@
 # Tier 1 data model
 
-The schema is `apps/api/prisma/schema.prisma`. The `domain` migration was generated with Prisma Migrate and then extended with PostgreSQL partial indexes and checks. UUIDs identify rows; order numbers and invoice numbers are human-facing identifiers. Every table has `created_at` and `updated_at`. Instants use `timestamptz`, delivery dates use `date`, and money uses integer cents.
+The schema is `apps/api/prisma/schema.prisma`. The `domain` and `domain_constraints` migrations were generated with Prisma Migrate and then extended with PostgreSQL checks and indexes. UUIDs identify rows; order numbers and invoice numbers are human-facing identifiers. Invoice numbers come from a PostgreSQL sequence (`INV-000001`, etc.); rollbacks can leave gaps. Every table has `created_at` and `updated_at`. Instants use `timestamptz`, delivery dates use `date`, and money uses integer cents.
 
 ## Entity relationships
 
@@ -8,6 +8,12 @@ The schema is `apps/api/prisma/schema.prisma`. The `domain` migration was genera
 erDiagram
   STAFF_USERS ||--o{ SESSIONS : authenticates
   STAFF_USERS ||--o{ ORDERS : creates
+  STAFF_USERS ||--o{ COMPANIES : default_driver_for
+  STAFF_USERS ||--o{ ORDER_EVENTS : acts_in
+  STAFF_USERS ||--o{ PREP_UNITS : starts
+  STAFF_USERS ||--o{ PREP_UNITS : finishes
+  STAFF_USERS ||--o{ DROPS : drives
+  STAFF_USERS ||--o{ DROPS : delivers
   SETTINGS { string key PK }
   KITCHEN_HOLIDAYS { uuid id PK }
   ALLERGENS ||--o{ DISH_ALLERGENS : labels
@@ -27,6 +33,7 @@ erDiagram
   PRICE_TIERS ||--o{ PRICE_ENTRIES : overrides
   PRICE_TIERS ||--o{ PRICE_TIERS : derives_from
   PRICE_TIERS ||--o{ COMPANIES : assigned_to
+  PRICE_TIERS ||--o{ ORDERS : priced_on
   COMPANIES ||--o{ COMPANY_DOMAINS : claims
   COMPANIES ||--o{ COMPANY_ADDRESSES : delivers_to
   COMPANIES ||--o{ COMPANY_HOLIDAYS : closes_on
@@ -93,6 +100,40 @@ erDiagram
 | Invoice has orders from one company, correct total, and billable statuses | One nullable invoice FK per order; non-negative total | Attach with a conditional update in one transaction, reconcile sums, and lock invoiced money. |
 | Snapshotted prices and delivery details | Typed cents and JSON columns | Copy validated current values when ordering; never re-price old snapshots. |
 
+The `domain_constraints` migration adds these row-level checks. The decision column names the rule each check implements.
+
+| Constraint | Rule | Decision |
+|---|---|---|
+| `prep_units_done_requires_start` | Done requires started. | Ki3 |
+| `prep_units_start_actor_matches_time` | Start time and actor occur together. | Ki2, Ki3 |
+| `prep_units_done_actor_matches_time` | Done time and actor occur together. | Ki2, Ki3 |
+| `prep_units_done_after_start` | Done time is no earlier than start. | Ki3 |
+| `order_kitchen_state_ready_requires_start` | Ready requires started. | Ki4 |
+| `order_kitchen_state_ready_after_start` | Ready is no earlier than start. | Ki4 |
+| `order_dispatch_state_out_requires_ready` | Out for delivery requires dispatch ready. | D2 |
+| `order_dispatch_state_delivered_requires_out` | Delivered requires out for delivery. | D2, D3 |
+| `order_dispatch_state_out_after_ready` | Out time is no earlier than ready time. | D2 |
+| `order_dispatch_state_delivered_after_out` | Delivered time is no earlier than out time. | D2, D3 |
+| `drops_delivered_actor_matches_time` | Delivery time and actor occur together. | D3 |
+| `drops_on_time_matches_delivery` | On-time result exists exactly when delivered. | D3 |
+| `orders_invoice_billable_status` | Invoiced orders are confirmed or delivered. | B1 |
+| `orders_confirmed_has_time` | Confirmed and delivered orders have confirmation time. | O1 |
+| `orders_placed_has_time` | Placed, confirmed and delivered orders have placement time. | O1 |
+| `orders_cancelled_has_time` | Cancelled orders have cancellation time. | O1 |
+| `orders_rejected_has_time_and_reason` | Rejected orders have rejection time and nonblank reason. | O1 |
+| `orders_active_has_address` | Placed, confirmed and delivered orders have address and snapshot. | O3, O5 |
+| `invoices_paid_time_matches_status` | Paid time exists exactly for paid invoices. | B2, B5 |
+| `invoices_void_time_matches_status` | Void time exists exactly for void invoices. | B2, B4 |
+| `price_tiers_none_fields` | NONE has no derivation fields. | P3 |
+| `price_tiers_cost_multiplier_fields` | COST_MULTIPLIER has positive factor only. | P3 |
+| `price_tiers_percent_over_tier_fields` | PERCENT_OVER_TIER has percent above -10000, a different base tier, and no factor. | P3 |
+| `price_tiers_default_active` | Default tier is active. | P1, P2 |
+| `order_line_combos_unit_covers_dish_price` | Unit price is at least dish price. | O4 |
+| `companies_delivery_time_hhmm` | Default delivery time is HH:mm. | Co1 |
+| `orders_delivery_time_hhmm` | Order delivery time is HH:mm. | O3 |
+| `drops_delivery_time_hhmm` | Drop delivery time is HH:mm. | D1 |
+| `companies_working_days_required` | Working days cannot be null. | Co4 |
+
 ## Indexes
 
 | Index or group | Purpose |
@@ -100,8 +141,8 @@ erDiagram
 | `orders(delivery_date,status)` | Cut-off processing and date/status board filters. |
 | `orders(company_id,delivery_date)` | Company history and billing candidate lookup. |
 | `orders(invoice_id)` | Invoice item lookup and uninvoiced filter. |
-| `order_line_combos(order_line_id)`, `order_lines(order_id)` | Fetch full order detail and prep combinations. |
-| `prep_units(combo_id)` unique plus index | One prep unit per combo and lookup from a combo. |
+| `order_lines(order_id)` | Fetch full order detail. |
+| `prep_units(combo_id)` unique | One prep unit per combo and lookup from a combo. |
 | `drops(delivery_date,driver_id)` | Driver's today view and date board. |
 | `employees(company_id)` | Company roster and scoped employee lookup. |
 | `menu_items(category_id,sort_order)`, `option_groups(dish_id,sort_order)`, `menu_categories(sort_order)` | Ordered menu and option group rendering. |
