@@ -1,7 +1,9 @@
 node_modules/
 .corepack/
 .next/
+*.tsbuildinfo
 .env
+.env.local
 .env.*.local
 dist/
 coverage/
