@@ -14,7 +14,7 @@
     "db:down": "docker compose down",
     "db:migrate": "pnpm --filter @fernleaf/api exec prisma migrate dev",
     "db:create": "pnpm --filter @fernleaf/api exec tsx tools/create-db.ts",
-    "db:seed": "pnpm --filter @fernleaf/api exec tsx prisma/seed.ts",
+    "db:seed": "pnpm --filter @fernleaf/api exec prisma generate && pnpm --filter @fernleaf/api exec tsx prisma/seed.ts",
     "db:drift": "pnpm --filter @fernleaf/api db:drift",
     "gen:module": "tsx tools/gen-module.ts",
     "format": "prettier --write ."

@@ -6,12 +6,11 @@
 
 ## Demo script
 
-1. Run `pnpm db:up`, `pnpm db:migrate`, `pnpm db:seed`, and `pnpm dev`.
-2. Send `POST /api/auth/login` with `admin@test.com` and `Test@1234`; use the returned cookie.
-3. Send `GET /api/auth/me` and `GET /api/staff` with the cookie.
-4. Create a staff account, change its role, reset its password, then deactivate it. Check that its previous session no longer authorizes `GET /api/auth/me`.
-5. Send `GET /api/staff` with a kitchen role cookie and observe a 403 error shape.
+1. With the existing PostgreSQL server running, run `pnpm db:create`, `pnpm db:migrate`, `pnpm db:seed`, `pnpm dev`, and `pnpm --filter @fernleaf/web dev`.
+2. Open `http://localhost:3000`, sign in as `admin@test.com` with `Test@1234`, then choose Staff from the sidebar.
+3. Create a staff account, change its role, reset its password, then deactivate it. The table updates after each action.
+4. Sign in as `kitchen@test.com`. Staff is absent from the sidebar; `GET /api/staff` returns 403.
 
 ## Out of scope
 
-Password recovery by email, audit logs, and single sign-on are outside the platform scope. The web login screen belongs to Session W.
+Password recovery by email, audit logs, and single sign-on are outside the platform scope.

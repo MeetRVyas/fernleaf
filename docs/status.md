@@ -9,7 +9,7 @@ OpenAPI at `/api/docs` advertises 96 operations. A controller search for `NOT_IM
 | Module | Backend | Web | Tests | Known defects / empty behavior |
 | --- | --- | --- | --- | --- |
 | Core | Health, readiness, OpenAPI real (3) | Login, shell, error pages | Route and helper unit tests | None found in audit |
-| Auth and staff | Login/logout/me (3), staff list/create/role/deactivate/reset (5) real | Login real; no staff admin screen | Auth database tests, login redirect unit test | Staff actions have no UI |
+| Auth and staff | Login/logout/me (3), staff list/create/role/deactivate/reset (5) real | Login and Staff management real | Auth database tests, login redirect unit test | No remaining known integration defect |
 | Settings | 5 routes return 501 | None | Settings value schema tests only | No settings or holidays UI |
 | Reference | 9 routes return 501 | None | None | No allergens, tags, stations UI |
 | Catalogue | 11 routes return 501 | None | None | No dishes, options, groups UI |
@@ -24,7 +24,7 @@ OpenAPI at `/api/docs` advertises 96 operations. A controller search for `NOT_IM
 | Dashboards | 4 routes return 501 | Four placeholder role pages | None | Each page says dashboard is coming |
 | Demo | Module absent | None | None | No realistic data; only four staff accounts seeded |
 
-The Next.js route files are `/`, `/login`, `/403`, `/admin`, `/kitchen`, `/dispatch`, and `/driver` plus error/loading/not-found states. Login redirects each role to its respective role page. `featureNavigation` registers Home only; no feature route is exposed in the sidebar. The four role pages are placeholders and make no feature API calls.
+At M0, the Next.js route files were `/`, `/login`, `/403`, `/admin`, `/kitchen`, `/dispatch`, and `/driver` plus error/loading/not-found states. Login redirects each role to its respective role page. At M0, `featureNavigation` registered Home only. M1 added the admin-only `/staff` route to the nav. The four role pages remain placeholders and make no feature API calls.
 
 ### Running walkthrough
 
@@ -44,3 +44,4 @@ Created `.env` from `.env.example`, with `fernleaf_finish`, then ran `pnpm db:cr
 | Milestone | State | Evidence | Commit |
 | --- | --- | --- | --- |
 | M0 audit | Complete | Lint passed; typecheck passed; unit tests 24/24; database tests 511/511; drift: no difference. Runtime role audit above. | `docs(audit): record initial route and role inventory` |
+| M1 integration | Complete | Two setup regression tests failed before fixes and passed afterward. Seed now generates Prisma and was run successfully; local web rewrite has a default and documented env var; Staff UI and permission-gated nav added. Lint and typecheck passed; unit tests 26/26; database tests 511/511; drift: no difference; web build passed with `/staff`. | `feat(staff): expose management and repair local setup` |
