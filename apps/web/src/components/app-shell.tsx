@@ -1,7 +1,7 @@
 'use client';
 
 import { can } from '@fernleaf/shared';
-import { AppShell, Burger, Button, Group, NavLink, Stack, Text, Title } from '@mantine/core';
+import { AppShell, Burger, Button, Container, Group, NavLink, Paper, Stack, Text, Title } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -35,7 +35,7 @@ export function ProtectedShell({ children }: { children: ReactNode }) {
   return (
     <AppShell header={{ height: 60 }} navbar={{ width: 250, breakpoint: 'sm', collapsed: { mobile: !opened } }} padding="md">
       <AppShell.Header><Group h="100%" px="md" justify="space-between">
-        <Group><Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" /><Title order={3}>Fernleaf Kitchen</Title></Group>
+        <Group gap="xs"><Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" /><Title order={3} visibleFrom="sm">Fernleaf Kitchen</Title><Title order={4} hiddenFrom="sm">Fernleaf</Title></Group>
         <Group gap="sm"><Text size="sm" visibleFrom="sm">{user.name}</Text><Button variant="subtle" size="sm" onClick={() => logout.mutate(undefined, { onSuccess: () => router.replace('/login') })}>Sign out</Button></Group>
       </Group></AppShell.Header>
       <AppShell.Navbar p="sm"><Stack gap="xs">
@@ -46,7 +46,7 @@ export function ProtectedShell({ children }: { children: ReactNode }) {
   );
 }
 
-export function RoleLanding({ path, title }: { path: string; title: string }) {
+export function RoleLanding({ path, title, mobileFirst = false }: { path: string; title: string; mobileFirst?: boolean }) {
   const session = useSession();
   const router = useRouter();
   useEffect(() => {
@@ -58,5 +58,6 @@ export function RoleLanding({ path, title }: { path: string; title: string }) {
   if (landingPath(session.data) !== path) {
     return <LoadingState />;
   }
-  return <ProtectedShell><Title order={2}>{title}</Title><Text c="dimmed" mt="sm">Dashboard coming with this feature.</Text></ProtectedShell>;
+  const content = <><Title order={2}>{title}</Title><Text c="dimmed" mt="sm">Dashboard coming with this feature.</Text></>;
+  return <ProtectedShell>{mobileFirst ? <Container size="sm" px={0}><Paper withBorder p="md" radius="md">{content}</Paper></Container> : content}</ProtectedShell>;
 }
