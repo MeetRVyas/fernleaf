@@ -66,13 +66,14 @@ The catalogue feature screens follow the contract paths, use typed-client calls 
 
 ## 10. Acceptance (demo script)
 
-1. Open /dishes as a permitted staff user after S1 is merged; verify catalogue.listDishes returns the contract response.
-2. Open /dishes/:id as a permitted staff user after S1 is merged; verify catalogue.getDish returns the contract response.
-3. Open /dishes as a permitted staff user after S1 is merged; verify catalogue.createDish returns the contract response.
+1. Sign in as admin and call `POST /api/dishes` with a unique uppercase SKU, cost in cents, minimum quantity one, and any existing reference IDs. `GET /api/dishes` shows the normalized lowercase SKU.
+2. Call `POST /api/options` to add a reusable option, then `POST /api/dishes/:id/option-groups` with its ID. `GET /api/dishes/:id` shows the group and ordered membership.
+3. Repeat the same option ID twice in one group request to see a validation error. Repeat the SKU in another dish request to see 409.
+4. Update the dish to inactive and verify `GET /api/dishes?active=false` includes it. Delete the group and verify the detail no longer includes it.
 
 ## 11. Out of scope
 
-Business implementation and UI remain assigned to S1; this session delivers contracts, ports, 501 shells and specifications. Tier 2 features follow decisions.md section 1.
+UI route wiring and navigation are outside this session's owned folders. Tier 2 image upload and multi-select groups remain out of scope under decisions.md section 1.
 
 ## 12. Files and boundaries
 
@@ -88,4 +89,4 @@ Recheck response conformance and the named database constraints when replacing a
 
 ## 15. How it works
 
-`@Route(contract)` binds method, path and permission. The global interceptor validates request input; the shell throws `NOT_IMPLEMENTED` (501). S1 replaces it with a thin service call, transaction, repository query and pure domain rule.
+The controller binds the shared contracts and delegates to CatalogueService. The service normalizes SKUs, checks references through ReferencePort, validates group membership, and wraps writes in TxRunner transactions. The repository owns all Prisma queries and replaces label and group links atomically. PostgreSQL enforces unique SKUs and one membership per group and option. The real CataloguePort serves dishes and reusable options to dependent modules. Reads return paged dishes and options, and ordered groups on dish detail.

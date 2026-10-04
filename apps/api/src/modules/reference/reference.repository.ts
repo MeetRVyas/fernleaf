@@ -42,4 +42,10 @@ export class ReferenceRepository {
     if (kind === 'dietaryTag') return tx.dietaryTag.update({ where: { id }, data: { name } });
     return tx.kitchenStation.update({ where: { id }, data: { name } });
   }
+
+  async existingIds(kind: ReferenceKind, ids: string[]): Promise<string[]> {
+    if (kind === 'allergen') return (await this.db.allergen.findMany({ where: { id: { in: ids } }, select: { id: true } })).map(row => row.id);
+    if (kind === 'dietaryTag') return (await this.db.dietaryTag.findMany({ where: { id: { in: ids } }, select: { id: true } })).map(row => row.id);
+    return (await this.db.kitchenStation.findMany({ where: { id: { in: ids } }, select: { id: true } })).map(row => row.id);
+  }
 }

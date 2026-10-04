@@ -4,13 +4,16 @@ import type { ReferenceKind } from './reference.repository.js';
 import { TxRunner } from '../../core/tx-runner.js';
 import { ApiError } from '../../core/api-error.js';
 import { normalizeName } from './domain/normalize-name.js';
+import type { ReferencePort } from './ports.js';
 @Injectable()
-export class ReferenceService {
+export class ReferenceService implements ReferencePort {
   constructor(
     @Inject(ReferenceRepository)
     private readonly repository: ReferenceRepository,
     @Inject(TxRunner) private readonly txRunner: TxRunner,
   ) {}
+
+  existingIds(kind: ReferenceKind, ids: string[]) { return this.repository.existingIds(kind, ids); }
 
   async list(kind: ReferenceKind, query: { page: number; pageSize: number; sort?: string }) {
     const sort = query.sort ?? 'name:asc';
