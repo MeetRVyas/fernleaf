@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import {
   listTiers,
   createTier,
@@ -7,50 +7,15 @@ import {
   setManualPrice,
   clearManualPrice,
 } from '@fernleaf/shared';
-import { Route } from '../../core/route.js';
-import { ApiError } from '../../core/api-error.js';
+import { Route, Input, type ContractInput } from '../../core/route.js';
+import { PricingService } from './pricing.service.js';
 @Controller()
 export class PricingController {
-  @Route(listTiers) listTiers(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'pricing.listTiers is not implemented',
-      501,
-    );
-  }
-  @Route(createTier) createTier(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'pricing.createTier is not implemented',
-      501,
-    );
-  }
-  @Route(updateTier) updateTier(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'pricing.updateTier is not implemented',
-      501,
-    );
-  }
-  @Route(getTierPrices) getTierPrices(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'pricing.getTierPrices is not implemented',
-      501,
-    );
-  }
-  @Route(setManualPrice) setManualPrice(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'pricing.setManualPrice is not implemented',
-      501,
-    );
-  }
-  @Route(clearManualPrice) clearManualPrice(): never {
-    throw new ApiError(
-      'NOT_IMPLEMENTED',
-      'pricing.clearManualPrice is not implemented',
-      501,
-    );
-  }
+  constructor(@Inject(PricingService) private readonly service: PricingService) {}
+  @Route(listTiers) listTiers() { return this.service.listTiers(); }
+  @Route(createTier) createTier(@Input() input: ContractInput<typeof createTier>) { return this.service.createTier(input.body); }
+  @Route(updateTier) updateTier(@Input() input: ContractInput<typeof updateTier>) { return this.service.updateTier(input.params.id, input.body); }
+  @Route(getTierPrices) getTierPrices(@Input() input: ContractInput<typeof getTierPrices>) { return this.service.getTierPrices(input.params.id, input.query); }
+  @Route(setManualPrice) setManualPrice(@Input() input: ContractInput<typeof setManualPrice>) { return this.service.setManualPrice(input.params.id, input.body.subjectType, input.body.subjectId, input.body.priceCents); }
+  @Route(clearManualPrice) clearManualPrice(@Input() input: ContractInput<typeof clearManualPrice>) { return this.service.clearManualPrice(input.params.id, input.params.subjectType, input.params.subjectId); }
 }
