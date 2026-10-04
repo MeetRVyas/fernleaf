@@ -259,16 +259,25 @@ export class CompaniesService implements CompanyPort {
   }
   async createHoliday(companyId: string, date: string, name: string) {
     await this.requireCompany(companyId);
-    const row = await this.txRunner.run(async (tx) => {
-      if (await this.repository.holidayOn(companyId, stringToDbDate(date), tx))
+    let row;
+    try {
+      row = await this.txRunner.run(async (tx) => {
+        if (
+          await this.repository.holidayOn(companyId, stringToDbDate(date), tx)
+        )
+          throw new ApiError('CONFLICT', 'Company holiday already exists', 409);
+        return this.repository.createHoliday(
+          tx,
+          companyId,
+          stringToDbDate(date),
+          name,
+        );
+      });
+    } catch (error) {
+      if (isUnique(error))
         throw new ApiError('CONFLICT', 'Company holiday already exists', 409);
-      return this.repository.createHoliday(
-        tx,
-        companyId,
-        stringToDbDate(date),
-        name,
-      );
-    });
+      throw error;
+    }
     return {
       id: row.id,
       companyId: row.companyId,
