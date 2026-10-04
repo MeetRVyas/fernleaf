@@ -17,13 +17,13 @@ price_tiers, price_entries. Other modules are accessed through ports.
 
 Source: `packages/shared/src/contracts/pricing.ts`. Multi-value query filters use repeated keys when a route defines one.
 
-| Id | Method and path | Permission | Request | Response | Errors |
-|---|---|---|---|---|---|
-| `pricing.listTiers` | `GET /price-tiers` | `pricing:read` | shared zod input | shared zod response | 501 until session implementation |
-| `pricing.createTier` | `POST /price-tiers` | `pricing:manage` | shared zod input | shared zod response | 501 until session implementation |
-| `pricing.updateTier` | `PATCH /price-tiers/:id` | `pricing:manage` | shared zod input | shared zod response | 501 until session implementation |
-| `pricing.getTierPrices` | `GET /price-tiers/:id/prices` | `pricing:read` | shared zod input | shared zod response | 501 until session implementation |
-| `pricing.setManualPrice` | `PUT /price-tiers/:id/prices` | `pricing:manage` | shared zod input | shared zod response | 501 until session implementation |
+| Id                         | Method and path                                          | Permission       | Request          | Response            | Errors                           |
+| -------------------------- | -------------------------------------------------------- | ---------------- | ---------------- | ------------------- | -------------------------------- |
+| `pricing.listTiers`        | `GET /price-tiers`                                       | `pricing:read`   | shared zod input | shared zod response | 501 until session implementation |
+| `pricing.createTier`       | `POST /price-tiers`                                      | `pricing:manage` | shared zod input | shared zod response | 501 until session implementation |
+| `pricing.updateTier`       | `PATCH /price-tiers/:id`                                 | `pricing:manage` | shared zod input | shared zod response | 501 until session implementation |
+| `pricing.getTierPrices`    | `GET /price-tiers/:id/prices`                            | `pricing:read`   | shared zod input | shared zod response | 501 until session implementation |
+| `pricing.setManualPrice`   | `PUT /price-tiers/:id/prices`                            | `pricing:manage` | shared zod input | shared zod response | 501 until session implementation |
 | `pricing.clearManualPrice` | `DELETE /price-tiers/:id/prices/:subjectType/:subjectId` | `pricing:manage` | shared zod input | shared zod response | 501 until session implementation |
 
 ## 4. Domain rules
@@ -62,13 +62,17 @@ The pricing feature screens follow the contract paths, use typed-client calls an
 
 ## 10. Acceptance (demo script)
 
-1. Open /price-tiers as a permitted staff user after S1 is merged; verify pricing.listTiers returns the contract response.
-2. Open /price-tiers as a permitted staff user after S1 is merged; verify pricing.createTier returns the contract response.
-3. Open /price-tiers/:id as a permitted staff user after S1 is merged; verify pricing.updateTier returns the contract response.
+1. Sign in as an admin and call `GET /api/price-tiers`; verify the active default tier appears.
+2. Create a `COST_MULTIPLIER` tier with factor 2400, then enter a manual dish price. The manual price wins over the computed price.
+3. Create a tier derived from the default by 1500 basis points. A base price of 333 cents resolves to 385 cents.
+4. Try to deactivate the default tier or create a derivation cycle; each is rejected.
+5. Open `PricingScreen` once the web shell mounts it. Select a tier, set and clear a manual price, and use the missing-only filter.
 
 ## 11. Out of scope
 
-Business implementation and UI remain assigned to S1; this session delivers contracts, ports, 501 shells and specifications. Tier 2 features follow decisions.md section 1.
+- Full tier-editor rows, including dishes and options without manual entries on any tier, require a catalogue listing port. The current `CataloguePort` only looks up IDs. `getTierPrices` therefore lists subjects with a manual entry on at least one tier; `missingOnly` cannot expose subjects unknown to every tier. Add the read port in a small public-port change before treating the tier editor as complete.
+- The web shell's App Router pages and navigation registry are outside this session's allowed folders. `PricingScreen` is implemented in the feature folder but needs a thin route and nav entry from the shell owner.
+- End-to-end company tier selection awaits the real `CompanyPort` provider; the current provider is the deterministic stub.
 
 ## 12. Files and boundaries
 
@@ -84,4 +88,4 @@ Recheck response conformance and the named database constraints when replacing a
 
 ## 15. How it works
 
-`@Route(contract)` binds method, path and permission. The global interceptor validates request input; the shell throws `NOT_IMPLEMENTED` (501). S1 replaces it with a thin service call, transaction, repository query and pure domain rule.
+The controller binds all six shared routes to `PricingService`. The service validates tier rules and the derivation graph before each transactional write. `PricingRepository` reads and writes only price tiers and entries. The `PricingPort` resolves a subject by checking its manual entry first, then walking its base tier or applying a cost multiplier; the pure resolver rounds upward to five cents. The company and catalogue ports supply company assignment and subject identity. The screen uses the shared typed client and TanStack Query, with contract-backed tier form validation and loading, empty, and error states.
