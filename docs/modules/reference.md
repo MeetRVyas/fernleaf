@@ -86,3 +86,5 @@ Recheck response conformance and the named database constraints when replacing a
 ## 15. How it works
 
 `@Route(contract)` binds each method, path and permission. The global interceptor validates input. The controller delegates to the service, which trims names, checks duplicates and performs writes in `TxRunner` transactions through the Reference repository. A PostgreSQL unique constraint handles racing creates. Lists use server paging and name sort. Because the existing tables have no active flag, responses show true and requests to set false are rejected until the schema owner adds the columns.
+
+`ReferenceScreen` provides create, rename and paged list views for each reference kind through the typed client, with loading, empty, error and permission states. Thin `app/` routes and navigation entries must be wired by their owner before the screens are accessible in the browser.

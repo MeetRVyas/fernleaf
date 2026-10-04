@@ -90,3 +90,5 @@ Recheck response conformance and the named database constraints when replacing a
 ## 15. How it works
 
 The controller binds the shared contracts and delegates to CatalogueService. The service normalizes SKUs, checks references through ReferencePort, validates group membership, and wraps writes in TxRunner transactions. The repository owns all Prisma queries and replaces label and group links atomically. PostgreSQL enforces unique SKUs and one membership per group and option. The real CataloguePort serves dishes and reusable options to dependent modules. Reads return paged dishes and options, and ordered groups on dish detail.
+
+`CatalogueScreen` uses the typed client for paged dishes and options, forms validated against shared request schemas, and an option-group editor. It handles loading, empty, error and permission states. Thin `app/` routes and navigation entries must be wired by their owner before the screen is accessible in the browser.
