@@ -17,15 +17,15 @@ menu_categories, menu_items, company_hidden_categories, company_hidden_items. Ot
 
 Source: `packages/shared/src/contracts/menu.ts`. Multi-value query filters use repeated keys when a route defines one.
 
-| Id | Method and path | Permission | Request | Response | Errors |
-|---|---|---|---|---|---|
-| `menu.listCategories` | `GET /menu-categories` | `menu:read` | shared zod input | shared zod response | 501 until session implementation |
-| `menu.createCategory` | `POST /menu-categories` | `menu:manage` | shared zod input | shared zod response | 501 until session implementation |
-| `menu.updateCategory` | `PATCH /menu-categories/:id` | `menu:manage` | shared zod input | shared zod response | 501 until session implementation |
-| `menu.createItem` | `POST /menu-items` | `menu:manage` | shared zod input | shared zod response | 501 until session implementation |
-| `menu.updateItem` | `PATCH /menu-items/:id` | `menu:manage` | shared zod input | shared zod response | 501 until session implementation |
-| `menu.setHiding` | `PUT /companies/:id/menu-hiding` | `menu:manage` | shared zod input | shared zod response | 501 until session implementation |
-| `menu.preview` | `GET /employees/:id/menu` | `menu:preview` | shared zod input | shared zod response | 501 until session implementation |
+| Id                     | Method and path                                  | Permission     | Request          | Response            | Errors                           |
+| ---------------------- | ------------------------------------------------ | -------------- | ---------------- | ------------------- | -------------------------------- |
+| `menu.listCategories`  | `GET /menu-categories`                           | `menu:read`    | shared zod input | shared zod response | 501 until session implementation |
+| `menu.createCategory`  | `POST /menu-categories`                          | `menu:manage`  | shared zod input | shared zod response | 501 until session implementation |
+| `menu.updateCategory`  | `PATCH /menu-categories/:id`                     | `menu:manage`  | shared zod input | shared zod response | 501 until session implementation |
+| `menu.createItem`      | `POST /menu-items`                               | `menu:manage`  | shared zod input | shared zod response | 501 until session implementation |
+| `menu.updateItem`      | `PATCH /menu-items/:id`                          | `menu:manage`  | shared zod input | shared zod response | 501 until session implementation |
+| `menu.setHiding`       | `PUT /companies/:id/menu-hiding`                 | `menu:manage`  | shared zod input | shared zod response | 501 until session implementation |
+| `menu.preview`         | `GET /employees/:id/menu`                        | `menu:preview` | shared zod input | shared zod response | 501 until session implementation |
 | `menu.previewCategory` | `GET /employees/:id/menu/categories/:categoryId` | `menu:preview` | shared zod input | shared zod response | 501 until session implementation |
 
 ## 4. Domain rules

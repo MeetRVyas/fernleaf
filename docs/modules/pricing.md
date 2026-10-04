@@ -17,13 +17,13 @@ price_tiers, price_entries. Other modules are accessed through ports.
 
 Source: `packages/shared/src/contracts/pricing.ts`. Multi-value query filters use repeated keys when a route defines one.
 
-| Id | Method and path | Permission | Request | Response | Errors |
-|---|---|---|---|---|---|
-| `pricing.listTiers` | `GET /price-tiers` | `pricing:read` | shared zod input | shared zod response | 501 until session implementation |
-| `pricing.createTier` | `POST /price-tiers` | `pricing:manage` | shared zod input | shared zod response | 501 until session implementation |
-| `pricing.updateTier` | `PATCH /price-tiers/:id` | `pricing:manage` | shared zod input | shared zod response | 501 until session implementation |
-| `pricing.getTierPrices` | `GET /price-tiers/:id/prices` | `pricing:read` | shared zod input | shared zod response | 501 until session implementation |
-| `pricing.setManualPrice` | `PUT /price-tiers/:id/prices` | `pricing:manage` | shared zod input | shared zod response | 501 until session implementation |
+| Id                         | Method and path                                          | Permission       | Request          | Response            | Errors                           |
+| -------------------------- | -------------------------------------------------------- | ---------------- | ---------------- | ------------------- | -------------------------------- |
+| `pricing.listTiers`        | `GET /price-tiers`                                       | `pricing:read`   | shared zod input | shared zod response | 501 until session implementation |
+| `pricing.createTier`       | `POST /price-tiers`                                      | `pricing:manage` | shared zod input | shared zod response | 501 until session implementation |
+| `pricing.updateTier`       | `PATCH /price-tiers/:id`                                 | `pricing:manage` | shared zod input | shared zod response | 501 until session implementation |
+| `pricing.getTierPrices`    | `GET /price-tiers/:id/prices`                            | `pricing:read`   | shared zod input | shared zod response | 501 until session implementation |
+| `pricing.setManualPrice`   | `PUT /price-tiers/:id/prices`                            | `pricing:manage` | shared zod input | shared zod response | 501 until session implementation |
 | `pricing.clearManualPrice` | `DELETE /price-tiers/:id/prices/:subjectType/:subjectId` | `pricing:manage` | shared zod input | shared zod response | 501 until session implementation |
 
 ## 4. Domain rules
