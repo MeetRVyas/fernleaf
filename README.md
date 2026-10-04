@@ -4,7 +4,7 @@ This monorepo contains the NestJS API in `apps/api`, an empty `apps/web` slot fo
 
 ## Quick start
 
-Use Node 22 and corepack. Copy `.env.example` to `.env` and give this worktree its own database name. Use one server per machine, one database per worktree. Run `corepack pnpm install`; start the shared PostgreSQL server once with `pnpm db:up`, then use `pnpm db:create` in each worktree. Next run `pnpm --filter @fernleaf/api exec prisma generate`, `pnpm db:migrate`, `pnpm db:seed`, and `pnpm dev`. The API listens on `http://localhost:3001/api`; `/api/health` has no database dependency and `/api/health/ready` checks PostgreSQL.
+Use Node 22 and corepack. Run `corepack pnpm install`, then `pnpm typecheck` to generate the Prisma client and check types; this works before creating `.env`. Copy `.env.example` to `.env` and give this worktree its own database name. Use one server per machine, one database per worktree. Start the shared PostgreSQL server once with `pnpm db:up`, then use `pnpm db:create` in each worktree. Next run `pnpm db:migrate`, `pnpm db:seed`, and `pnpm dev`. `pnpm test:db` also generates the client first, but requires a real `DATABASE_URL` and running PostgreSQL. The API listens on `http://localhost:3001/api`; `/api/health` has no database dependency and `/api/health/ready` checks PostgreSQL.
 
 The seeded staff accounts are `admin@test.com`, `kitchen@test.com`, `dispatch@test.com`, and `driver@test.com`, each with password `Test@1234`. Change these before using any nonlocal environment.
 

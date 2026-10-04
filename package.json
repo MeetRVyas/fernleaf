@@ -7,7 +7,7 @@
     "install:all": "pnpm install",
     "dev": "pnpm --filter @fernleaf/api dev",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit && pnpm -r --if-present typecheck",
+    "typecheck": "pnpm --filter @fernleaf/api exec prisma generate && tsc --noEmit && pnpm -r --if-present typecheck",
     "test": "vitest run",
     "test:db": "pnpm --filter @fernleaf/api exec prisma generate && vitest run --config vitest.db.config.ts",
     "db:up": "docker compose up -d db",

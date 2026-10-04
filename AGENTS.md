@@ -40,6 +40,7 @@ business rule, the brief wins. On engineering choices, `decisions.md` and `conve
 - `pnpm db:seed`: idempotently seed four staff accounts.
 - `pnpm db:drift`: compare migration SQL with `schema.prisma` using a temporary shadow database.
 - `pnpm dev`: run the API in watch mode.
+- `pnpm typecheck` and `pnpm test:db` generate the Prisma client first; no manual generate step is needed. Generation can run without `DATABASE_URL`, but database commands and the API require it.
 - `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:db`: required checks.
 - `pnpm gen:module <name>`: create the API layer files and module spec stub.
 
