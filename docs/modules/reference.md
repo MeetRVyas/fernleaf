@@ -62,13 +62,14 @@ The reference feature screens follow the contract paths, use typed-client calls 
 
 ## 10. Acceptance (demo script)
 
-1. Open /allergens as a permitted staff user after S1 is merged; verify reference.listAllergens returns the contract response.
-2. Open /allergens as a permitted staff user after S1 is merged; verify reference.createAllergen returns the contract response.
-3. Open /allergens/:id as a permitted staff user after S1 is merged; verify reference.updateAllergen returns the contract response.
+1. Sign in as admin and call `GET /api/allergens`; observe a paged list.
+2. Call `POST /api/allergens` with `{"name":"Milk","isActive":true}`; observe the new UUID.
+3. Call `PATCH /api/allergens/:id` with `{"name":"Dairy"}`; observe the updated name. Repeat with another existing name to see 409.
+4. Repeat the create/list/rename flow for dietary tags and kitchen stations.
 
 ## 11. Out of scope
 
-Business implementation and UI remain assigned to S1; this session delivers contracts, ports, 501 shells and specifications. Tier 2 features follow decisions.md section 1.
+Reference deactivation is pending the three `isActive` columns requested in `docs/schema-requests.md`. The UI route wiring is outside this session's owned folders. Tier 2 features follow decisions.md section 1.
 
 ## 12. Files and boundaries
 
@@ -84,4 +85,4 @@ Recheck response conformance and the named database constraints when replacing a
 
 ## 15. How it works
 
-`@Route(contract)` binds method, path and permission. The global interceptor validates request input; the shell throws `NOT_IMPLEMENTED` (501). S1 replaces it with a thin service call, transaction, repository query and pure domain rule.
+`@Route(contract)` binds each method, path and permission. The global interceptor validates input. The controller delegates to the service, which trims names, checks duplicates and performs writes in `TxRunner` transactions through the Reference repository. A PostgreSQL unique constraint handles racing creates. Lists use server paging and name sort. Because the existing tables have no active flag, responses show true and requests to set false are rejected until the schema owner adds the columns.
